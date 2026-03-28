@@ -724,14 +724,19 @@ footer {
 .demo-mockup-wrap {
     position: relative;
     width: 100%;
-    max-width: 420px;
-    height: 720px;
+    max-width: 380px;
+    height: 780px;
     border-radius: 44px;
     overflow: hidden;
     box-shadow: 0 40px 80px rgba(0,0,0,0.6);
     border: 3px solid rgba(139,92,246,0.3);
     background: #0f172a;
     margin: 0 auto;
+    transition: transform 0.3s ease;
+}
+
+.demo-mockup-wrap:hover {
+    transform: translateY(-10px) scale(1.02);
 }
 
 .demo-iframe {

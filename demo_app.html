@@ -807,6 +807,26 @@
       setTimeout(() => goTo('screen-home','left'), 350);
     }, 1800);
   }
+  /* ── Auto-scale script for Iframe ── */
+  function autoScale() {
+    const phone = document.querySelector('.phone');
+    if (!phone) return;
+    const padding = 20; // safe area
+    const scale = Math.min(
+      (window.innerWidth - padding) / 375,
+      (window.innerHeight - padding) / 780
+    );
+    if (scale < 1) {
+      phone.style.transform = `scale(${scale})`;
+      phone.style.transformOrigin = 'center center';
+    } else {
+      phone.style.transform = 'none';
+    }
+  }
+  window.addEventListener('resize', autoScale);
+  window.addEventListener('load', autoScale);
+  autoScale();
+
 </script>
 </body>
 </html>
