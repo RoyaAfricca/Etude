@@ -1,0 +1,8 @@
+{
+  "java.import.exclusions": [
+    "**/flutter/**"
+  ],
+  "files.exclude": {
+    "**/flutter": true
+  }
+}

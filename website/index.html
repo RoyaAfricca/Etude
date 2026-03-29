@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Étude - Gestion Intelligente de vos Séances</title>
+    <meta name="description" content="Découvrez Étude, l'application ultime pour gérer, suivre et optimiser vos séances d'étude. Disponible sur Android et Windows.">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Animated Particle Canvas -->
+    <canvas id="particles-canvas"></canvas>
+
+    <div class="blob-bg"></div>
+    <div class="blob-bg blob-2"></div>
+    <div class="blob-bg blob-3"></div>
+
+    <nav class="navbar glass">
+        <div class="container nav-content">
+            <div class="logo">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <span>Étude</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#features">Fonctionnalités</a></li>
+                <li><a href="#demo">Démo</a></li>
+                <li><a href="#stats">Statistiques</a></li>
+                <li><a href="#contact">Contact</a></li>
+                <li><a href="#download" class="btn-primary-sm"><i class="fa-solid fa-download"></i> Télécharger</a></li>
+            </ul>
+            <button class="hamburger" id="hamburger" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu glass" id="mobileMenu">
+        <a href="#features" class="mobile-link">Fonctionnalités</a>
+        <a href="#demo" class="mobile-link">Démo</a>
+        <a href="#stats" class="mobile-link">Statistiques</a>
+        <a href="#contact" class="mobile-link">Contact</a>
+        <a href="#download" class="mobile-link mobile-dl"><i class="fa-solid fa-download"></i> Télécharger</a>
+    </div>
+
+    <!-- Hero -->
+    <header class="hero container">
+        <div class="hero-text fade-in">
+            <div class="hero-badge">
+                <span class="badge-dot"></span>
+                Disponible sur Android &amp; Windows
+            </div>
+            <h1>Gérez vos élèves avec <span id="typing-text"></span><span class="cursor">|</span></h1>
+            <p>L'application indispensable pour planifier vos séances, suivre les présences, gérer les paiements et analyser vos performances en temps réel.</p>
+            <div class="hero-buttons">
+                <a href="#download" class="btn-primary">
+                    <i class="fa-brands fa-android"></i> Télécharger l'APK
+                </a>
+                <a href="#features" class="btn-secondary">Découvrir plus <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+            <div class="platform-badges">
+                <div class="platform-badge">
+                    <i class="fa-brands fa-android"></i>
+                    <span>Android</span>
+                </div>
+                <div class="platform-badge">
+                    <i class="fa-brands fa-windows"></i>
+                    <span>Windows</span>
+                </div>
+                <div class="platform-badge">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span>100% Local</span>
+                </div>
+            </div>
+        </div>
+        <div class="hero-visual fade-in delay-1">
+            <div class="phone-mockup">
+                <div class="phone-screen">
+                    <div class="phone-statusbar">
+                        <span>9:41</span>
+                        <div class="statusbar-icons">
+                            <i class="fa-solid fa-signal"></i>
+                            <i class="fa-solid fa-wifi"></i>
+                            <i class="fa-solid fa-battery-full"></i>
+                        </div>
+                    </div>
+                    <div class="phone-content" id="phone-slider">
+                        <!-- Screen 1: Dashboard -->
+                        <div class="mockup-screen active">
+                            <div class="phone-header">
+                                <span class="phone-title">Étude</span>
+                                <span class="phone-subtitle">Tableau de bord</span>
+                            </div>
+                            <div class="phone-card">
+                                <div class="phone-card-label">Revenus du mois</div>
+                                <div class="phone-card-value">*** <small>DT</small></div>
+                                <div class="phone-mini-bars">
+                                    <div class="mini-bar" style="--h:60%"></div>
+                                    <div class="mini-bar" style="--h:80%"></div>
+                                    <div class="mini-bar" style="--h:45%"></div>
+                                    <div class="mini-bar" style="--h:90%"></div>
+                                    <div class="mini-bar" style="--h:70%"></div>
+                                    <div class="mini-bar" style="--h:85%"></div>
+                                    <div class="mini-bar active" style="--h:95%"></div>
+                                </div>
+                            </div>
+                            <div class="phone-stats">
+                                <div class="phone-stat">
+                                    <i class="fa-solid fa-users" style="color:#8b5cf6"></i>
+                                    <span class="stat-num">24</span>
+                                    <span class="stat-lbl">Élèves</span>
+                                </div>
+                                <div class="phone-stat">
+                                    <i class="fa-solid fa-chalkboard" style="color:#3b82f6"></i>
+                                    <span class="stat-num">6</span>
+                                    <span class="stat-lbl">Groupes</span>
+                                </div>
+                                <div class="phone-stat">
+                                    <i class="fa-solid fa-calendar-check" style="color:#10b981"></i>
+                                    <span class="stat-num">48</span>
+                                    <span class="stat-lbl">Séances</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Screen 2: Groups -->
+                        <div class="mockup-screen">
+                            <div class="phone-header">
+                                <span class="phone-title">Groupes</span>
+                                <span class="phone-subtitle">Scolarité 25/26</span>
+                            </div>
+                            <div class="mockup-list">
+                                <div class="mockup-list-item">
+                                    <div class="ml-icon"><i class="fa-solid fa-users"></i></div>
+                                    <div class="ml-text">
+                                        <strong>4sc Exp G1</strong>
+                                        <span>12 élèves</span>
+                                    </div>
+                                </div>
+                                <div class="mockup-list-item">
+                                    <div class="ml-icon" style="background:rgba(59,130,246,0.1);color:#3b82f6;"><i class="fa-solid fa-users"></i></div>
+                                    <div class="ml-text">
+                                        <strong>4sc Exp G2</strong>
+                                        <span>14 élèves</span>
+                                    </div>
+                                </div>
+                                <div class="mockup-list-item">
+                                    <div class="ml-icon" style="background:rgba(16,185,129,0.1);color:#10b981;"><i class="fa-solid fa-users"></i></div>
+                                    <div class="ml-text">
+                                        <strong>2ème sc G1</strong>
+                                        <span>18 élèves</span>
+                                    </div>
+                                </div>
+                                <div class="mockup-list-item">
+                                    <div class="ml-icon" style="background:rgba(236,72,153,0.1);color:#ec4899;"><i class="fa-solid fa-users"></i></div>
+                                    <div class="ml-text">
+                                        <strong>1ère année</strong>
+                                        <span>20 élèves</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Screen 3: Students -->
+                        <div class="mockup-screen">
+                            <div class="phone-header">
+                                <span class="phone-title">4sc Exp G1</span>
+                                <span class="phone-subtitle">Liste des élèves</span>
+                            </div>
+                            <div class="mockup-list">
+                                <div class="mockup-list-item">
+                                    <div class="ml-avatar">AM</div>
+                                    <div class="ml-text">
+                                        <strong>Ahmed Mansour</strong>
+                                        <span>Payé</span>
+                                    </div>
+                                </div>
+                                <div class="mockup-list-item">
+                                    <div class="ml-avatar" style="background:#3b82f6;">SM</div>
+                                    <div class="ml-text">
+                                        <strong>Sarra Mejri</strong>
+                                        <span>Non Payé</span>
+                                    </div>
+                                </div>
+                                <div class="mockup-list-item">
+                                    <div class="ml-avatar" style="background:#10b981;">YT</div>
+                                    <div class="ml-text">
+                                        <strong>Youssef Trabelsi</strong>
+                                        <span>Payé</span>
+                                    </div>
+                                </div>
+                                <div class="mockup-list-item">
+                                    <div class="ml-avatar" style="background:#f59e0b;">FB</div>
+                                    <div class="ml-text">
+                                        <strong>Fatma Ben Ali</strong>
+                                        <span>Payé</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Screen 4: Session -->
+                        <div class="mockup-screen">
+                            <div class="phone-header">
+                                <span class="phone-title">Séance 4sc Exp G1</span>
+                                <span class="phone-subtitle">27 Mars - 14:00</span>
+                            </div>
+                            <div class="session-details">
+                                <div class="mockup-list" style="flex:none; margin-bottom:8px;">
+                                    <div class="mockup-list-item">
+                                        <div class="ml-avatar">AM</div>
+                                        <div class="ml-text">
+                                            <strong>Ahmed Mansour</strong>
+                                            <span>Présent(e)</span>
+                                        </div>
+                                        <div class="ml-status status-green"><i class="fa-solid fa-check"></i></div>
+                                    </div>
+                                    <div class="mockup-list-item">
+                                        <div class="ml-avatar" style="background:#3b82f6;">SM</div>
+                                        <div class="ml-text">
+                                            <strong>Sarra Mejri</strong>
+                                            <span>Absent(e)</span>
+                                        </div>
+                                        <div class="ml-status status-red"><i class="fa-solid fa-xmark"></i></div>
+                                    </div>
+                                </div>
+                                <div class="sd-card">
+                                    <div class="sd-stat">
+                                        <span>Présents</span>
+                                        <strong>11/12</strong>
+                                    </div>
+                                    <div class="sd-stat">
+                                        <span>Absents</span>
+                                        <strong style="color: #ef4444;">1</strong>
+                                    </div>
+                                </div>
+                                <div class="sd-actions">
+                                    <div class="sd-btn"><i class="fa-solid fa-check-double"></i> Valider Séance</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="phone-glow"></div>
+            </div>
+            <!-- Floating Badges -->
+            <div class="float-badge float-badge-1 fly-in">
+                <i class="fa-solid fa-chart-line"></i> Statistiques temps réel
+            </div>
+            <div class="float-badge float-badge-2 fly-in delay-1">
+                <i class="fa-solid fa-lock"></i> Données sécurisées
+            </div>
+            <div class="float-badge float-badge-3 fly-in delay-2">
+                <i class="fa-solid fa-bolt"></i> Ultra rapide
+            </div>
+        </div>
+    </header>
+
+    <!-- Stats Counter Section -->
+    <section id="stats" class="section stats-section">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-counter fade-in">
+                    <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+                    <div class="counter" data-target="500">0</div>
+                    <div class="counter-plus">+</div>
+                    <div class="counter-label">Élèves gérés</div>
+                </div>
+                <div class="stat-counter fade-in delay-1">
+                    <div class="stat-icon"><i class="fa-solid fa-calendar-check"></i></div>
+                    <div class="counter" data-target="4000">0</div>
+                    <div class="counter-plus">+</div>
+                    <div class="counter-label">Séances enregistrées</div>
+                </div>
+                <div class="stat-counter fade-in delay-2">
+                    <div class="stat-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                    <div class="counter" data-target="100">0</div>
+                    <div class="counter-plus">%</div>
+                    <div class="counter-label">Données locales</div>
+                </div>
+                <div class="stat-counter fade-in delay-3">
+                    <div class="stat-icon"><i class="fa-solid fa-star"></i></div>
+                    <div class="counter" data-target="4">0</div>
+                    <div class="counter-dot">.</div>
+                    <div class="counter" data-target="9">0</div>
+                    <div class="counter-label">Note moyenne</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features" class="container section">
+        <div class="section-header fade-in">
+            <div class="section-tag">Fonctionnalités</div>
+            <h2 class="section-title">Tout ce dont vous avez besoin</h2>
+            <p class="section-subtitle">Une application complète pensée pour les professeurs particuliers et les centres de soutien scolaire.</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card glass tilt-effect fade-in">
+                <div class="icon-wrapper icon-purple">
+                    <i class="fa-solid fa-calendar-check"></i>
+                </div>
+                <h3>Suivi des Séances</h3>
+                <p>Planifiez, validez et archivez chaque séance. Historique complet avec présences et absences.</p>
+                <div class="feature-tag">Productivité</div>
+            </div>
+            <div class="feature-card glass tilt-effect fade-in delay-1">
+                <div class="icon-wrapper icon-blue">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+                <h3>Statistiques Avancées</h3>
+                <p>Graphiques interactifs, revenus mensuels, taux de présence — tout visualisé en un coup d'œil.</p>
+                <div class="feature-tag">Analyse</div>
+            </div>
+            <div class="feature-card glass tilt-effect fade-in delay-2">
+                <div class="icon-wrapper icon-green">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <h3>100% Hors-ligne</h3>
+                <p>Vos données restent sur votre appareil. Aucun compte requis, aucune connexion internet nécessaire.</p>
+                <div class="feature-tag">Confidentialité</div>
+            </div>
+            <div class="feature-card glass tilt-effect fade-in">
+                <div class="icon-wrapper icon-orange">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <h3>Gestion des Groupes</h3>
+                <p>Organisez vos élèves en groupes, gérez les paiements et suivez les statuts individuellement.</p>
+                <div class="feature-tag">Organisation</div>
+            </div>
+            <div class="feature-card glass tilt-effect fade-in delay-1">
+                <div class="icon-wrapper icon-pink">
+                    <i class="fa-solid fa-fingerprint"></i>
+                </div>
+                <h3>Accès Sécurisé</h3>
+                <p>Authentification biométrique (empreinte / PIN) sur Android. Accès direct protégé sur Windows.</p>
+                <div class="feature-tag">Sécurité</div>
+            </div>
+            <div class="feature-card glass tilt-effect fade-in delay-2">
+                <div class="icon-wrapper icon-cyan">
+                    <i class="fa-solid fa-mobile-screen"></i>
+                </div>
+                <h3>Multi-plateforme</h3>
+                <p>Disponible sur Android et Windows. La même interface élégante, partout où vous travaillez.</p>
+                <div class="feature-tag">Compatible</div>
+            </div>
+        </div>
+    <!-- Features section ends here -->
+
+    <!-- Demo Section (Version Arab & PDF) -->
+    <section id="demo" class="container section">
+        <div class="section-header fade-in">
+            <div class="section-tag">Nouveauté</div>
+            <h2 class="section-title">Version Arabe &amp; Rapports PDF</h2>
+            <p class="section-subtitle">Une interface pensée pour le monde arabe, avec le support natif du texte RTL et la génération de rapports professionnels.</p>
+        </div>
+        <div class="demo-wrapper">
+            <div class="demo-text fade-in">
+                <div class="demo-item">
+                    <div class="di-icon"><i class="fa-solid fa-language"></i></div>
+                    <div class="di-content">
+                        <h3>Interface multilingue (RTL)</h3>
+                        <p>Étude s'adapte à votre langue. Activez le mode Arabe pour une interface entièrement droite-à-gauche, fluide et intuitive.</p>
+                    </div>
+                </div>
+                <div class="demo-item fade-in delay-1">
+                    <div class="di-icon"><i class="fa-solid fa-file-pdf"></i></div>
+                    <div class="di-content">
+                        <h3>Reports &amp; Reçus Professionnels</h3>
+                        <p>Générez des PDF pour chaque paiement ou des états globaux pour vos groupes en un clic. Design élégant et imprimable.</p>
+                    </div>
+                </div>
+                <div class="demo-item fade-in delay-2">
+                    <div class="di-icon"><i class="fa-solid fa-display"></i></div>
+                    <div class="di-content">
+                        <h3>Multi-plateforme Windows &amp; Android</h3>
+                        <p>Retrouvez la même expérience premium sur votre PC ou sur votre smartphone, avec synchronisation de vos données.</p>
+                    </div>
+                </div>
+                <div class="demo-cta">
+                    <a href="#download" class="btn-primary">Essayer la démo <i class="fa-solid fa-rocket"></i></a>
+                </div>
+            </div>
+            <div class="demo-visual fade-in delay-1">
+                <div class="demo-badge-live">Démo Interactive</div>
+                <div class="demo-mockup-wrap">
+                    <div class="iframe-container">
+                        <iframe src="demo_app.html" class="demo-iframe" title="Étude Interactive Demo"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="container section">
+        <div class="section-header fade-in">
+            <div class="section-tag">Comment ça marche</div>
+            <h2 class="section-title">Simple et efficace</h2>
+        </div>
+        <div class="steps-grid">
+            <div class="step-card fade-in">
+                <div class="step-number">01</div>
+                <div class="step-icon"><i class="fa-solid fa-download"></i></div>
+                <h3>Installez l'application</h3>
+                <p>Téléchargez l'APK Android ou l'EXE Windows et installez en quelques secondes.</p>
+                <div class="step-line"></div>
+            </div>
+            <div class="step-card fade-in delay-1">
+                <div class="step-number">02</div>
+                <div class="step-icon"><i class="fa-solid fa-users-plus"></i></div>
+                <h3>Ajoutez vos groupes</h3>
+                <p>Créez vos groupes, ajoutez vos élèves avec leurs informations et tarifs.</p>
+                <div class="step-line"></div>
+            </div>
+            <div class="step-card fade-in delay-2">
+                <div class="step-number">03</div>
+                <div class="step-icon"><i class="fa-solid fa-chart-pie"></i></div>
+                <h3>Suivez tout en temps réel</h3>
+                <p>Enregistrez les présences, les paiements et consultez vos statistiques à tout moment.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section (remplace "Activation/Prix") -->
+    <section id="contact" class="container section">
+        <div class="contact-wrapper glass fade-in">
+            <div class="contact-left">
+                <div class="section-tag" style="margin-bottom:20px;">Support</div>
+                <h2>Une question ? On est là.</h2>
+                <p>Notre équipe vous accompagne pour toute question d'installation, d'utilisation ou de configuration de l'application.</p>
+                <div class="contact-features">
+                    <div class="contact-feature">
+                        <div class="cf-icon"><i class="fa-solid fa-headset"></i></div>
+                        <div>
+                            <strong>Support réactif</strong>
+                            <span>Réponse en moins de 24h</span>
+                        </div>
+                    </div>
+                    <div class="contact-feature">
+                        <div class="cf-icon"><i class="fa-solid fa-wrench"></i></div>
+                        <div>
+                            <strong>Assistance technique</strong>
+                            <span>Configuration et dépannage inclus</span>
+                        </div>
+                    </div>
+                    <div class="contact-feature">
+                        <div class="cf-icon"><i class="fa-solid fa-arrows-rotate"></i></div>
+                        <div>
+                            <strong>Mises à jour régulières</strong>
+                            <span>Nouvelles fonctionnalités sans frais</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="contact-right">
+                <div class="whatsapp-card">
+                    <div class="wa-glow"></div>
+                    <div class="wa-icon-wrap">
+                        <i class="fa-brands fa-whatsapp"></i>
+                    </div>
+                    <h3>Contactez-nous sur WhatsApp</h3>
+                    <p>Disponible 7j/7 pour répondre à vos questions et vous aider à démarrer.</p>
+                    <a href="https://wa.me/21629403406" target="_blank" class="btn-whatsapp">
+                        <i class="fa-brands fa-whatsapp"></i>
+                        Ouvrir WhatsApp
+                    </a>
+                    <div class="wa-number">
+                        <i class="fa-solid fa-phone"></i>
+                        +216 29 40 34 06
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download -->
+    <section id="download" class="container section text-center fade-in">
+        <div class="download-wrapper">
+            <div class="section-tag" style="margin:0 auto 24px;">Téléchargement</div>
+            <h2>Prêt à démarrer ?</h2>
+            <p>Installez Étude sur votre appareil et gérez vos séances dès aujourd'hui.</p>
+            <div class="download-buttons">
+                <a href="application_etude.apk" download="application_etude.apk" class="btn-download pulse-btn">
+                    <div class="dl-icon"><i class="fa-brands fa-android"></i></div>
+                    <div class="dl-text">
+                        <small>Télécharger pour</small>
+                        <strong>Android (APK)</strong>
+                    </div>
+                </a>
+                <a href="application_etude.exe" download="application_etude.exe" class="btn-download-outline">
+                    <div class="dl-icon"><i class="fa-brands fa-windows"></i></div>
+                    <div class="dl-text">
+                        <small>Télécharger pour</small>
+                        <strong>Windows (EXE)</strong>
+                    </div>
+                </a>
+            </div>
+            <p class="download-note">
+                <i class="fa-solid fa-circle-info"></i>
+                Pour l'APK Android, activez "Sources inconnues". L'installateur Windows est certifié et ajoutera automatiquement l'icône sur votre bureau.
+            </p>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container text-center">
+            <div class="logo" style="justify-content:center; margin-bottom:16px;">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <span>Étude</span>
+            </div>
+            <p class="footer-links">
+                <a href="#features">Fonctionnalités</a>
+                <span>·</span>
+                <a href="#contact">Contact</a>
+                <span>·</span>
+                <a href="#download">Télécharger</a>
+            </p>
+            <p class="footer-copy">&copy; 2025 Application Étude &mdash; Tous droits réservés.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+
+========================================================
+  Lancement de la compilation de votre APK...
+========================================================
+
+Cette operation peut prendre quelques minutes (telechargement des dependances, compilation...)
+
+Terminer le programme de commandes (O/N)ÿ? Terminer le programme de commandes (O/N)ÿ? 

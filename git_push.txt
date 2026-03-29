@@ -1,2 +1,0 @@
-remote: Permission to RoyaAfricca/Etude.git denied to soltaniforkano-svg.
-fatal: unable to access 'https://github.com/RoyaAfricca/Etude.git/': The requested URL returned error: 403

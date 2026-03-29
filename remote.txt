@@ -1,2 +1,0 @@
-origin	https://github.com/RoyaAfricca/Etude.git (fetch)
-origin	https://github.com/RoyaAfricca/Etude.git (push)

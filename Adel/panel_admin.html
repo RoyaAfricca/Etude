@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Étude — Panel Admin</title>
+  <style>
+    :root {
+      --bg: #0f1123;
+      --surface: #1a1d35;
+      --surface2: #252845;
+      --border: #2a2d4a;
+      --primary: #6c63ff;
+      --accent: #00d9ff;
+      --success: #4caf50;
+      --danger: #f44336;
+      --text: #ffffff;
+      --text2: #9da3c2;
+      --text3: #5d6188;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+
+    .subtitle { color: var(--text2); font-size: 14px; margin-bottom: 36px; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      width: 100%;
+      max-width: 540px;
+      margin-bottom: 24px;
+    }
+
+    .card h2 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text2);
+      margin-bottom: 18px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    label { display: block; color: var(--text2); font-size: 13px; margin-bottom: 6px; }
+
+    input[type="text"] {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 15px;
+      padding: 12px 16px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    input[type="text"]:focus { border-color: var(--primary); }
+
+    button {
+      margin-top: 16px;
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .2s;
+    }
+    button:hover { opacity: .88; }
+
+    .result-box {
+      display: none;
+      margin-top: 20px;
+      background: var(--surface2);
+      border: 1px solid var(--primary);
+      border-radius: 12px;
+      padding: 16px 20px;
+    }
+    .result-box .label { color: var(--text2); font-size: 12px; margin-bottom: 6px; }
+    .result-box .code {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: 6px;
+      color: var(--accent);
+    }
+    .copy-btn {
+      margin-top: 10px;
+      width: auto;
+      padding: 8px 20px;
+      font-size: 13px;
+      background: var(--surface);
+      border: 1px solid var(--primary);
+      border-radius: 8px;
+      color: var(--primary);
+      cursor: pointer;
+    }
+    .copy-btn:hover { background: var(--primary); color: #fff; }
+
+    /* History table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th {
+      text-align: left;
+      color: var(--text3);
+      font-weight: 600;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 10px 10px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text2);
+      word-break: break-all;
+    }
+    td:last-child { text-align: right; }
+    .del-btn {
+      background: none;
+      border: none;
+      color: var(--danger);
+      cursor: pointer;
+      font-size: 16px;
+      padding: 0;
+      width: auto;
+      margin: 0;
+    }
+    .empty { color: var(--text3); font-size: 13px; text-align: center; padding: 18px; }
+    .clear-btn {
+      margin-top: 12px;
+      background: transparent;
+      border: 1px solid var(--danger);
+      color: var(--danger);
+      font-size: 13px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      width: auto;
+    }
+    .clear-btn:hover { background: var(--danger); color: #fff; }
+
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--success);
+      color: #fff;
+      padding: 10px 24px;
+      border-radius: 50px;
+      font-size: 14px;
+      font-weight: 600;
+      opacity: 0;
+      transition: opacity .3s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<h1>🛡️ Étude — Panel Admin</h1>
+<p class="subtitle">Génération de codes d'activation et de reset liés à l'appareil client</p>
+
+<!-- ── Générateur ─────────────────────────────────────────────────────── -->
+<div class="card">
+  <h2>Générer un code d'activation</h2>
+  <label for="deviceIdInput">ID appareil du client (ANDROID_ID)</label>
+  <input type="text" id="deviceIdInput" placeholder="ex: a1b2c3d4e5f6g7h8" autocomplete="off" />
+  <button onclick="generateCode()">Générer le code</button>
+
+  <div class="result-box" id="resultBox">
+    <div class="label">Code à envoyer par SMS :</div>
+    <div class="code" id="codeDisplay"></div>
+    <button class="copy-btn" onclick="copyCode()">📋 Copier</button>
+  </div>
+</div>
+
+<!-- ── Historique ─────────────────────────────────────────────────────── -->
+<div class="card">
+  <h2>Historique</h2>
+  <div id="historyContainer"></div>
+  <div style="display:flex; gap:10px;">
+    <button class="clear-btn" onclick="clearHistory()">🗑️ Effacer tout</button>
+  </div>
+</div>
+
+<!-- ── Générateur de RESET ────────────────────────────────────────────── -->
+<div class="card" style="border-color: var(--danger);">
+  <h2 style="color: var(--danger);">Générer un code de RESET</h2>
+  <label for="resetDeviceIdInput">ID appareil du client (RESET)</label>
+  <input type="text" id="resetDeviceIdInput" placeholder="ex: a1b2c3d4e5f6g7h8" autocomplete="off" />
+  <button style="background: var(--danger);" onclick="generateResetCode()">Générer le code RESET</button>
+
+  <div class="result-box" id="resetResultBox" style="border-color: var(--danger);">
+    <div class="label">Code de RESET (8 caractères) :</div>
+    <div class="code" id="resetCodeDisplay" style="color: var(--danger);"></div>
+    <button class="copy-btn" onclick="copyResetCode()" style="border-color: var(--danger); color: var(--danger);">📋 Copier le RESET</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── Clé secrète HMAC (doit être identique à celle de l'app Flutter) ──────
+  const SECRET_KEY = 'ETUDE_SECRET_KEY_2024';
+
+  // ── HMAC-SHA256 en JS pur via SubtleCrypto ────────────────────────────────
+  async function hmacSha256(key, message) {
+    const enc = new TextEncoder();
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw', enc.encode(key),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false, ['sign']
+    );
+    const sig = await crypto.subtle.sign('HMAC', cryptoKey, enc.encode(message));
+    return Array.from(new Uint8Array(sig))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  async function generateCode() {
+    const rawId = document.getElementById('deviceIdInput').value.trim();
+    if (!rawId) { showToast('⚠️ Saisissez l\'ID appareil', '#f44336'); return; }
+
+    const deviceId = rawId.toUpperCase();
+    const hex = await hmacSha256(SECRET_KEY, deviceId);
+    const code = hex.substring(0, 8).toUpperCase();
+    lastActivationCode = code;
+
+    document.getElementById('codeDisplay').textContent = code;
+    document.getElementById('resultBox').style.display = 'block';
+
+    saveToHistory(rawId, code, 'Activation');
+    renderHistory();
+  }
+
+  async function generateResetCode() {
+    const rawId = document.getElementById('resetDeviceIdInput').value.trim();
+    if (!rawId) { showToast('⚠️ Saisissez l\'ID appareil', '#f44336'); return; }
+
+    const deviceId = rawId.toUpperCase();
+    const hex = await hmacSha256(SECRET_KEY + '_RESET', deviceId);
+    const code = hex.substring(0, 8).toUpperCase();
+    lastResetCode = code;
+
+    document.getElementById('resetCodeDisplay').textContent = code;
+    document.getElementById('resetResultBox').style.display = 'block';
+
+    saveToHistory(rawId, code, 'RESET Password');
+    renderHistory();
+  }
+
+  function copyCode() {
+    navigator.clipboard.writeText(lastActivationCode).then(() => showToast('✅ Code envoyé !'));
+  }
+
+  function copyResetCode() {
+    navigator.clipboard.writeText(lastResetCode).then(() => showToast('🔒 Code Reset copié !'));
+  }
+
+  // ── Historique localStorage ───────────────────────────────────────────────
+  function loadHistory() {
+    try { return JSON.parse(localStorage.getItem('etude_activations') || '[]'); }
+    catch { return []; }
+  }
+
+  function saveToHistory(deviceId, code) {
+    const history = loadHistory();
+    // Éviter les doublons sur le même device ID
+    const existing = history.findIndex(h => h.deviceId === deviceId);
+    const entry = {
+      deviceId,
+      code,
+      date: new Date().toLocaleString('fr-FR')
+    };
+    if (existing !== -1) history[existing] = entry;
+    else history.unshift(entry);
+    localStorage.setItem('etude_activations', JSON.stringify(history));
+  }
+
+  function deleteEntry(deviceId) {
+    let history = loadHistory().filter(h => h.deviceId !== deviceId);
+    localStorage.setItem('etude_activations', JSON.stringify(history));
+    renderHistory();
+  }
+
+  function clearHistory() {
+    if (confirm('Effacer tout l\'historique ?')) {
+      localStorage.removeItem('etude_activations');
+      renderHistory();
+    }
+  }
+
+  function renderHistory() {
+    const history = loadHistory();
+    const container = document.getElementById('historyContainer');
+    if (history.length === 0) {
+      container.innerHTML = '<p class="empty">Aucune activation enregistrée.</p>';
+      return;
+    }
+    container.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>ID Appareil</th>
+            <th>Code</th>
+            <th>Type</th>
+            <th>Date</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${history.map(h => `
+            <tr>
+              <td>${h.deviceId}</td>
+              <td style="color:var(--accent);font-weight:700;letter-spacing:1px">${h.code}</td>
+              <td style="font-size:10px">${h.type || 'Activation'}</td>
+              <td>${h.date}</td>
+              <td><button class="del-btn" onclick="deleteEntry('${h.deviceId}')" title="Supprimer">🗑</button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  function showToast(msg, bg = '#4caf50') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.background = bg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  // Entrée clavier
+  document.getElementById('deviceIdInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') generateCode();
+  });
+
+  renderHistory();
+</script>
+</body>
+</html>
