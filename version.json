@@ -1,0 +1,12 @@
+{
+  "android": {
+    "version": "1.1.0",
+    "build_number": 2,
+    "url": "https://royaafricca.github.io/Etude/application_etude.apk"
+  },
+  "windows": {
+    "version": "1.1.0",
+    "build_number": 2,
+    "url": "https://royaafricca.github.io/Etude/application_etude_windows.msix"
+  }
+}

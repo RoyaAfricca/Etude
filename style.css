@@ -724,8 +724,7 @@ footer {
 .demo-mockup-wrap {
     position: relative;
     width: 100%;
-    max-width: 380px;
-    height: 780px;
+    max-width: 400px; /* Largeur d'un smartphone */
     border-radius: 44px;
     overflow: hidden;
     box-shadow: 0 40px 80px rgba(0,0,0,0.6);
@@ -735,11 +734,17 @@ footer {
     transition: transform 0.3s ease;
 }
 
-.demo-mockup-wrap:hover {
-    transform: translateY(-10px) scale(1.02);
+.iframe-container {
+    position: relative;
+    width: 100%;
+    padding-bottom: 210%; /* Aspect ratio pour téléphone (env. 375/780) */
+    height: 0;
 }
 
 .demo-iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     border: none;
