@@ -11,6 +11,8 @@ import 'group_state_screen.dart';
 import 'group_sessions_screen.dart';
 import 'take_attendance_screen.dart';
 import '../services/pdf_service.dart';
+import '../models/schedule_slot.dart';
+import '../l10n/app_localizations.dart';
 
 class GroupDetailScreen extends StatefulWidget {
   final String groupId;
@@ -255,6 +257,10 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                     ),
                     const SizedBox(height: 24),
 
+                    // ── Scheduling Section ──
+                    _buildSchedulingSection(context, provider, group),
+                    const SizedBox(height: 24),
+
                     // Filter chips
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
@@ -446,9 +452,12 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
   void _showAddStudentDialog(BuildContext context, AppProvider provider) {
     final nameCtl = TextEditingController();
     final phoneCtl = TextEditingController();
+    final emailCtl = TextEditingController();
+    final schoolCtl = TextEditingController();
     final priceCtl = TextEditingController(text: '200');
     final enrollmentFee = provider.enrollmentFee;
     bool chargeEnrollmentFee = enrollmentFee > 0;
+    bool feeAutoExempted = false;
 
     showModalBottomSheet(
       context: context,
@@ -510,7 +519,41 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                     prefixIcon:
                         Icon(Icons.phone_outlined, color: AppTheme.primary),
                   ),
+                  onChanged: (val) {
+                    if (enrollmentFee > 0) {
+                      final alreadyPaid = provider.hasPaidEnrollmentFee(val);
+                      if (alreadyPaid && chargeEnrollmentFee) {
+                        setSt(() {
+                          chargeEnrollmentFee = false;
+                          feeAutoExempted = true;
+                        });
+                      } else if (!alreadyPaid && feeAutoExempted) {
+                        setSt(() {
+                          chargeEnrollmentFee = true;
+                          feeAutoExempted = false;
+                        });
+                      }
+                    }
+                  },
                 ),
+                if (feeAutoExempted)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline,
+                            size: 13, color: AppTheme.accent),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            'Frais d\'inscription déjà payés dans une autre matière.',
+                            style: const TextStyle(
+                                fontSize: 11, color: AppTheme.accent),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: priceCtl,
@@ -599,6 +642,8 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                         price,
                         enrollmentFeeAmount:
                             chargeEnrollmentFee ? enrollmentFee : 0.0,
+                        email: emailCtl.text.trim(),
+                        originSchool: schoolCtl.text.trim(),
                       );
                       Navigator.pop(ctx);
                     },
@@ -624,6 +669,182 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
         ),
       ),
     );
+  }
+}
+
+extension on _GroupDetailScreenState {
+  Widget _buildSchedulingSection(BuildContext context, AppProvider provider, dynamic group) {
+    final l = AppLocalizations.of(context);
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+        border: Border.all(color: AppTheme.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                l.roomOccupation,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+              ),
+              IconButton(
+                icon: const Icon(Icons.edit_calendar, color: AppTheme.primary),
+                onPressed: () => _showEditSchedulesDialog(context, provider, group),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildScheduleInfo(l.regularMode, group.regularSlots, provider.isAr),
+          const SizedBox(height: 12),
+          _buildScheduleInfo(l.holidayMode, group.holidaySlots, provider.isAr),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScheduleInfo(String title, List<ScheduleSlot> slots, bool isAr) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textSecondary)),
+        const SizedBox(height: 4),
+        if (slots.isEmpty)
+          const Text('—', style: TextStyle(color: AppTheme.textMuted))
+        else
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: slots.map((s) => Chip(
+              label: Text('${s.dayName(isAr)} ${s.timeRange}', style: const TextStyle(fontSize: 12)),
+              backgroundColor: AppTheme.primary.withOpacity(0.1),
+              side: BorderSide.none,
+              padding: EdgeInsets.zero,
+            )).toList(),
+          ),
+      ],
+    );
+  }
+
+  void _showEditSchedulesDialog(BuildContext context, AppProvider provider, dynamic group) {
+    List<ScheduleSlot> regular = List.from(group.regularSlots);
+    List<ScheduleSlot> holiday = List.from(group.holidaySlots);
+    final l = AppLocalizations.of(context);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSt) => Padding(
+          padding: EdgeInsets.only(left: 24, right: 24, top: 24, bottom: MediaQuery.of(ctx).viewInsets.bottom + 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Modifier les horaires', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+              const SizedBox(height: 20),
+              _buildEditableScheduleList(l.regularMode, regular, (s) => setSt(() => regular.add(s)), (s) => setSt(() => regular.remove(s)), provider.isAr),
+              const Divider(height: 32),
+              _buildEditableScheduleList(l.holidayMode, holiday, (s) => setSt(() => holiday.add(s)), (s) => setSt(() => holiday.remove(s)), provider.isAr),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: () {
+                    provider.updateGroupSchedules(group.id, regular, holiday);
+                    Navigator.pop(ctx);
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  child: const Text('Enregistrer', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEditableScheduleList(String title, List<ScheduleSlot> slots, Function(ScheduleSlot) onAdd, Function(ScheduleSlot) onRemove, bool isAr) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+            IconButton(icon: const Icon(Icons.add_circle_outline, color: AppTheme.primary), onPressed: () => _showAddSlotDialog(onAdd, isAr)),
+          ],
+        ),
+        if (slots.isEmpty)
+           const Padding(padding: EdgeInsets.only(left: 4), child: Text('Aucun créneau', style: TextStyle(color: AppTheme.textMuted, fontSize: 13))),
+        ...slots.map((s) => ListTile(
+          dense: true,
+          contentPadding: EdgeInsets.zero,
+          title: Text('${s.dayName(isAr)}: ${s.timeRange}', style: const TextStyle(color: AppTheme.textPrimary)),
+          trailing: IconButton(icon: const Icon(Icons.delete_outline, size: 18, color: AppTheme.danger), onPressed: () => onRemove(s)),
+        )),
+      ],
+    );
+  }
+
+  void _showAddSlotDialog(Function(ScheduleSlot) onAdd, bool isAr) {
+    int selectedDay = 1;
+    TimeOfDay startTime = const TimeOfDay(hour: 14, minute: 0);
+    TimeOfDay endTime = const TimeOfDay(hour: 16, minute: 0);
+
+    showDialog(context: context, builder: (ctx) => StatefulBuilder(builder: (ctx, setSt) => AlertDialog(
+      backgroundColor: AppTheme.surface,
+      title: const Text('Ajouter un créneau'),
+      content: Column(mainAxisSize: MainAxisSize.min, children: [
+        DropdownButtonFormField<int>(
+          value: selectedDay,
+          dropdownColor: AppTheme.surface,
+          items: List.generate(7, (i) => DropdownMenuItem(value: i+1, child: Text(_getDayName(i+1, isAr), style: const TextStyle(color: AppTheme.textPrimary)))),
+          onChanged: (v) => setSt(() => selectedDay = v!),
+          decoration: const InputDecoration(labelText: 'Jour'),
+        ),
+        const SizedBox(height: 12),
+        ListTile(
+          title: Text('Début: ${startTime.format(ctx)}', style: const TextStyle(color: AppTheme.textPrimary)),
+          trailing: const Icon(Icons.access_time, color: AppTheme.primary),
+          onTap: () async {
+            final t = await showTimePicker(context: context, initialTime: startTime);
+            if (t != null) setSt(() => startTime = t);
+          },
+        ),
+        ListTile(
+          title: Text('Fin: ${endTime.format(ctx)}', style: const TextStyle(color: AppTheme.textPrimary)),
+          trailing: const Icon(Icons.access_time, color: AppTheme.primary),
+          onTap: () async {
+            final t = await showTimePicker(context: context, initialTime: endTime);
+            if (t != null) setSt(() => endTime = t);
+          },
+        ),
+      ]),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+        ElevatedButton(onPressed: () {
+          onAdd(ScheduleSlot(dayOfWeek: selectedDay, startHour: startTime.hour, startMinute: startTime.minute, endHour: endTime.hour, endMinute: endTime.minute));
+          Navigator.pop(ctx);
+        }, style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.white), child: const Text('Ajouter')),
+      ],
+    )));
+  }
+
+  String _getDayName(int day, bool isAr) {
+    if (isAr) {
+      const days = ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'];
+      return days[day - 1];
+    }
+    const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+    return days[day - 1];
   }
 }
 

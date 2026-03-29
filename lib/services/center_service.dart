@@ -15,7 +15,7 @@ extension TeacherContractTypeLabel on TeacherContractType {
       case TeacherContractType.salarie:
         return 'Recruté (Salarié)';
       case TeacherContractType.locateur:
-        return 'Locateur de salle';
+        return 'Locateur (Loyer Salle)';
       case TeacherContractType.pourcentage:
         return 'Au pourcentage';
     }
@@ -26,7 +26,7 @@ extension TeacherContractTypeLabel on TeacherContractType {
       case TeacherContractType.salarie:
         return 'Montant fixe mensuel versé au professeur';
       case TeacherContractType.locateur:
-        return 'Le professeur paye un loyer fixe par séance au centre';
+        return 'Le professeur paye un loyer fixe de salle au centre par séance';
       case TeacherContractType.pourcentage:
         return 'Le professeur reçoit un % des revenus de ses groupes';
     }
@@ -37,6 +37,7 @@ extension TeacherContractTypeLabel on TeacherContractType {
 class Teacher {
   final String id;
   String name;
+  String phone;
   TeacherContractType contractType;
   double fixedAmount;    // Pour salarie ou locateur
   double percentage;     // Pour pourcentage (0-100)
@@ -44,6 +45,7 @@ class Teacher {
   Teacher({
     required this.id,
     required this.name,
+    this.phone = '',
     this.contractType = TeacherContractType.pourcentage,
     this.fixedAmount = 0.0,
     this.percentage = 50.0,
@@ -56,7 +58,7 @@ class Teacher {
       case TeacherContractType.salarie:
         return fixedAmount; // Il reçoit son salaire fixe
       case TeacherContractType.locateur:
-        // Il reçoit tout sauf le loyer par séance
+        // Le locateur garde tout l'argent collecté sauf le loyer dû au centre
         return totalRevenue - (fixedAmount * sessionCount);
       case TeacherContractType.pourcentage:
         return totalRevenue * percentage / 100.0;
@@ -80,6 +82,7 @@ class Teacher {
   Map<String, dynamic> toJson() => {
         'id': id,
         'name': name,
+        'phone': phone,
         'contractType': contractType.index,
         'fixedAmount': fixedAmount,
         'percentage': percentage,
@@ -88,6 +91,7 @@ class Teacher {
   factory Teacher.fromJson(Map<String, dynamic> json) => Teacher(
         id: json['id'] as String,
         name: json['name'] as String,
+        phone: json['phone'] as String? ?? '',
         contractType: TeacherContractType
             .values[json['contractType'] as int? ?? 0],
         fixedAmount: (json['fixedAmount'] as num?)?.toDouble() ?? 0.0,

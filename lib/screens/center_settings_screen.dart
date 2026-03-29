@@ -8,6 +8,8 @@ import '../providers/app_provider.dart';
 import '../services/center_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/auth_helper.dart';
+import '../services/import_service.dart';
+import 'qr_sync_screen.dart';
 
 class CenterSettingsScreen extends StatefulWidget {
   const CenterSettingsScreen({super.key});
@@ -102,6 +104,7 @@ class _CenterSettingsScreenState extends State<CenterSettingsScreen>
 
   Future<void> _addOrEditTeacher({Teacher? existing}) async {
     final nameCtrl = TextEditingController(text: existing?.name ?? '');
+    final phoneCtrl = TextEditingController(text: existing?.phone ?? '');
     TeacherContractType contractType =
         existing?.contractType ?? TeacherContractType.pourcentage;
     final fixedCtrl = TextEditingController(
@@ -131,6 +134,16 @@ class _CenterSettingsScreenState extends State<CenterSettingsScreen>
                     decoration: const InputDecoration(
                       labelText: 'Nom complet',
                       prefixIcon: Icon(Icons.person_outline),
+                    ),
+                    style: const TextStyle(color: AppTheme.textPrimary),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: phoneCtrl,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                      labelText: 'Téléphone',
+                      prefixIcon: Icon(Icons.phone_outlined),
                     ),
                     style: const TextStyle(color: AppTheme.textPrimary),
                   ),
@@ -259,6 +272,7 @@ class _CenterSettingsScreenState extends State<CenterSettingsScreen>
       final t = Teacher(
         id: existing?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
         name: nameCtrl.text.trim(),
+        phone: phoneCtrl.text.trim(),
         contractType: contractType,
         fixedAmount:
             double.tryParse(fixedCtrl.text) ?? existing?.fixedAmount ?? 0,
@@ -541,7 +555,157 @@ class _CenterSettingsScreenState extends State<CenterSettingsScreen>
               onPressed: _saveCenterName,
             ),
           ),
+          const SizedBox(height: 40),
+
+          // ── Maintenance / Import ──────────────────────────────
+          Row(
+            children: [
+              const Icon(Icons.settings_backup_restore_rounded,
+                  color: AppTheme.textSecondary, size: 18),
+              const SizedBox(width: 8),
+              Text('Maintenance & Données',
+                  style: GoogleFonts.outfit(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textPrimary)),
+            ],
+          ),
+          const Divider(height: 24, color: AppTheme.cardBorder),
+          const SizedBox(height: 8),
+          
+          // Download Template Button
+          _buildMaintenanceButton(
+            icon: Icons.download_rounded,
+            label: 'Télécharger le modèle Excel',
+            description: 'Obtenir un fichier vierge avec les bons en-têtes',
+            color: AppTheme.accent,
+            onTap: () async {
+              final ok = await ImportService.generateTemplate();
+              if (ok && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Modèle Excel enregistré !'),
+                    backgroundColor: AppTheme.success,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
+          ),
+          const SizedBox(height: 12),
+          
+          // Import Button
+          _buildMaintenanceButton(
+            icon: Icons.upload_file_rounded,
+            label: 'Importer depuis Excel',
+            description: 'Ajouter élèves, profs et groupes en masse',
+            color: AppTheme.primary,
+            onTap: () async {
+              final provider = context.read<AppProvider>();
+              final stats = await ImportService.importFromExcel(provider);
+              if (mounted) {
+                if (stats.values.every((v) => v == 0)) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Aucune donnée importée (fichiers vides ou doublons)'),
+                      backgroundColor: AppTheme.warning,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                } else {
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      backgroundColor: AppTheme.surface,
+                      title: const Text('Importation terminée', style: TextStyle(color: AppTheme.textPrimary)),
+                      content: Text(
+                        'Importation réussie :\n'
+                        '• ${stats['students']} élèves\n'
+                        '• ${stats['teachers']} enseignants\n'
+                        '• ${stats['groups']} groupes',
+                        style: const TextStyle(color: AppTheme.textSecondary),
+                      ),
+                      actions: [
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text('OK'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+              }
+            },
+          ),
+          const SizedBox(height: 12),
+
+          // Cloud Sync Button
+          _buildMaintenanceButton(
+            icon: Icons.cloud_sync_rounded,
+            label: 'Synchronisation Cloud',
+            description: 'Lier mon téléphone pour faire l\'appel en temps réel',
+            color: const Color(0xFF6C63FF),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const QrSyncScreen()),
+              );
+            },
+          ),
+          const SizedBox(height: 40),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMaintenanceButton({
+    required IconData icon,
+    required String label,
+    required String description,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withOpacity(0.2)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: GoogleFonts.outfit(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textPrimary)),
+                  Text(description,
+                      style: GoogleFonts.outfit(
+                          fontSize: 12,
+                          color: AppTheme.textSecondary)),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios_rounded,
+                size: 14, color: color.withOpacity(0.5)),
+          ],
+        ),
       ),
     );
   }
@@ -713,6 +877,21 @@ class _TeacherCard extends StatelessWidget {
                     style: GoogleFonts.outfit(
                         fontWeight: FontWeight.w700,
                         color: AppTheme.textPrimary)),
+                if (teacher.phone.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.phone_outlined,
+                            size: 11, color: AppTheme.textSecondary),
+                        const SizedBox(width: 4),
+                        Text(teacher.phone,
+                            style: GoogleFonts.outfit(
+                                fontSize: 11,
+                                color: AppTheme.textSecondary)),
+                      ],
+                    ),
+                  ),
                 const SizedBox(height: 4),
                 Container(
                   padding:

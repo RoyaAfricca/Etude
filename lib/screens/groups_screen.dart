@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/auth_helper.dart';
+import '../models/schedule_slot.dart';
 import 'group_detail_screen.dart';
 
 class GroupsScreen extends StatelessWidget {
@@ -315,6 +316,7 @@ class GroupsScreen extends StatelessWidget {
     String? selectedSubject;
     String? selectedTeacherId;
     String? selectedRoom;
+    List<ScheduleSlot> regularSlots = [];
 
     final levels = ['Primaire', 'Collège', 'Secondaire'];
     final gradesMap = {
@@ -539,6 +541,37 @@ class GroupsScreen extends StatelessWidget {
                     ],
                     onChanged: (v) => setSt(() => selectedRoom = v),
                   ),
+                  const SizedBox(height: 12),
+                  // ── Structured Schedules ──
+                  const Text('Horaires structurés (Planification)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.textPrimary)),
+                  const SizedBox(height: 8),
+                  ...regularSlots.map((slot) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppTheme.primary.withOpacity(0.1)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.calendar_today, size: 14, color: AppTheme.primary),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text('${slot.dayName(provider.isAr)}: ${slot.timeRange}', style: const TextStyle(fontSize: 13))),
+                          IconButton(
+                            icon: const Icon(Icons.close, size: 16, color: Colors.grey),
+                            onPressed: () => setSt(() => regularSlots.remove(slot)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )),
+                  TextButton.icon(
+                    onPressed: () => _showAddSlotDialog(ctx, (newSlot) => setSt(() => regularSlots.add(newSlot))),
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('Ajouter un horaire précis'),
+                  ),
                   const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
@@ -554,6 +587,7 @@ class GroupsScreen extends StatelessWidget {
                                     roomName: selectedRoom,
                                     level: selectedLevel,
                                     grade: selectedGrade,
+                                    regularSlots: regularSlots,
                                   );
                               Navigator.pop(ctx);
                             }
@@ -638,6 +672,79 @@ class GroupsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _showAddSlotDialog(BuildContext context, Function(ScheduleSlot) onAdd) {
+    int selectedDay = 1;
+    TimeOfDay startTime = const TimeOfDay(hour: 14, minute: 0);
+    TimeOfDay endTime = const TimeOfDay(hour: 16, minute: 0);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSt) => AlertDialog(
+          backgroundColor: AppTheme.surface,
+          title: const Text('Ajouter un horaire', style: TextStyle(color: AppTheme.textPrimary)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<int>(
+                value: selectedDay,
+                dropdownColor: AppTheme.surface,
+                items: List.generate(7, (i) => DropdownMenuItem(value: i + 1, child: Text(_getDayName(i + 1, false), style: const TextStyle(color: AppTheme.textPrimary)))),
+                onChanged: (v) => setSt(() => selectedDay = v!),
+                decoration: const InputDecoration(labelText: 'Jour'),
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                title: const Text('Début', style: TextStyle(color: AppTheme.textPrimary)),
+                subtitle: Text(startTime.format(ctx), style: const TextStyle(color: AppTheme.textSecondary)),
+                trailing: const Icon(Icons.access_time, color: AppTheme.primary),
+                onTap: () async {
+                  final t = await showTimePicker(context: context, initialTime: startTime);
+                  if (t != null) setSt(() => startTime = t);
+                },
+              ),
+              ListTile(
+                title: const Text('Fin', style: TextStyle(color: AppTheme.textPrimary)),
+                subtitle: Text(endTime.format(ctx), style: const TextStyle(color: AppTheme.textSecondary)),
+                trailing: const Icon(Icons.access_time, color: AppTheme.primary),
+                onTap: () async {
+                  final t = await showTimePicker(context: context, initialTime: endTime);
+                  if (t != null) setSt(() => endTime = t);
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+            ElevatedButton(
+              onPressed: () {
+                onAdd(ScheduleSlot(
+                  dayOfWeek: selectedDay,
+                  startHour: startTime.hour,
+                  startMinute: startTime.minute,
+                  endHour: endTime.hour,
+                  endMinute: endTime.minute,
+                ));
+                Navigator.pop(ctx);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.white),
+              child: const Text('Ajouter'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _getDayName(int day, bool isAr) {
+    if (isAr) {
+      const days = ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'];
+      return days[day - 1];
+    }
+    const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+    return days[day - 1];
   }
 }
 

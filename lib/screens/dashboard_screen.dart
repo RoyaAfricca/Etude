@@ -14,6 +14,8 @@ import 'center_revenue_screen.dart';
 import 'login_screen.dart';
 import 'teacher_reports_screen.dart';
 import '../l10n/app_localizations.dart';
+import 'qr_sync_screen.dart';
+import 'room_occupation_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -23,6 +25,7 @@ class DashboardScreen extends StatelessWidget {
     return Scaffold(
       body: Consumer<AppProvider>(
         builder: (context, provider, _) {
+          final l = AppLocalizations.of(context);
           return CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
@@ -123,6 +126,20 @@ class DashboardScreen extends StatelessWidget {
                       },
                     );
                   }),
+                  // Mode Vacances Toggle
+                  _buildHolidayToggle(context, provider),
+                  // Cloud Sync Status Icon
+                  IconButton(
+                    icon: Icon(
+                      provider.cloudSyncEnabled ? Icons.cloud_done_rounded : Icons.cloud_off_rounded,
+                      color: provider.cloudSyncEnabled ? AppTheme.success : AppTheme.textMuted,
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const QrSyncScreen()));
+                    },
+                    tooltip: 'Synchronisation Cloud',
+                  ),
                   // Reset button
                   Container(
                     margin: const EdgeInsets.only(right: 8),
@@ -208,6 +225,16 @@ class DashboardScreen extends StatelessWidget {
                       }),
                       const SizedBox(height: 24),
                     ],
+
+                    // ── Room Occupation ──
+                    _ActionCard(
+                      title: l.roomOccupation,
+                      subtitle: provider.isHolidayMode ? l.holidayMode : l.regularMode,
+                      icon: Icons.meeting_room_rounded,
+                      color: Colors.teal,
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RoomOccupationScreen())),
+                    ),
+                    const SizedBox(height: 24),
 
                     // ── Groups Overview ──
                     Row(
@@ -1247,6 +1274,118 @@ class _FinancialReportCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+extension on DashboardScreen {
+  Widget _buildHolidayToggle(BuildContext context, AppProvider provider) {
+    final l = AppLocalizations.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          color: provider.isHolidayMode ? AppTheme.accent.withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: provider.isHolidayMode ? AppTheme.accent : AppTheme.textMuted.withOpacity(0.2)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              provider.isHolidayMode ? l.holidayMode : l.regularMode,
+              style: TextStyle(
+                fontSize: 10,
+                color: provider.isHolidayMode ? AppTheme.accent : AppTheme.textSecondary,
+                fontWeight: provider.isHolidayMode ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+            SizedBox(
+              height: 24,
+              child: Switch(
+                value: provider.isHolidayMode,
+                onChanged: (val) => provider.setHolidayMode(val),
+                activeColor: AppTheme.accent,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ActionCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24.0),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+            border: Border.all(color: color.withOpacity(0.2)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: color, size: 28),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.arrow_forward_ios,
+                  color: color.withOpacity(0.5), size: 16),
+            ],
+          ),
+        ),
       ),
     );
   }

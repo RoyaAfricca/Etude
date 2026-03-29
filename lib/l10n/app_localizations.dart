@@ -139,6 +139,31 @@ class AppLocalizations {
   String get toTeacher => isAr ? 'للأستاذ' : 'À l\'Enseignant';
   String get toCenter => isAr ? 'للمركز' : 'Au Centre';
   String get currency => isAr ? 'د.ت' : 'DT';
+  String get confirmDeletePresence => isAr ? 'حذف هذا الحضور؟' : 'Supprimer cette présence ?';
+  String get deletePresenceDesc => isAr ? 'سيؤدي هذا إلى تقليل عداد الطالب.' : 'Cela réduira le compteur de l\'élève.';
+
+  // ── Sync ────────────────────────────────────────────────────────────────────
+  String get syncCloud => isAr ? 'مزامنة السحاب' : 'Synchronisation Cloud';
+  String get syncActive => isAr ? 'المزامنة نشطة' : 'Synchronisation Active';
+  String get syncDisabled => isAr ? 'المزامنة معطلة' : 'Synchronisation Désactivée';
+  String get syncKeyLabel => isAr ? 'معرف المركز' : 'ID du Centre';
+  String get scanQrCode => isAr ? 'مسح رمز QR' : 'Scanner le QR Code';
+  String get syncDesc => isAr ? 'قم بتفعيل المزامنة لربط أجهزتك.' : 'Activez la synchro pour lier vos appareils.';
+  String get linkMobile => isAr ? 'ربط جهاز محمول' : 'Lier un appareil mobile';
+  String get scanOnPhone => isAr ? 'امسح هذا الرمز بهاتفك لمزامنة الحضور في الوقت الفعلي.' : 'Scannez ce QR Code avec votre téléphone pour synchroniser l\'appel en temps réel.';
+
+  // ── Scheduling ──────────────────────────────────────────────────────────────
+  String get roomOccupation => isAr ? 'إشغال القاعات' : 'Occupation des Salles';
+  String get holidayMode => isAr ? 'وضع العطلة' : 'Mode Vacances';
+  String get regularMode => isAr ? 'وضع عادي' : 'Mode Normal';
+  String get freeRooms => isAr ? 'القاعات الشاغرة' : 'Salles Libres';
+  String get addSchedule => isAr ? 'إضافة موعد' : 'Ajouter un horaire';
+  String get conflictsFound => isAr ? 'تم العثور على تعارض!' : 'Conflit détecté !';
+  String get roomOccupiedBy => isAr ? 'القاعة مشغولة من قبل' : 'Salle occupée par';
+  String get dayOfWeek => isAr ? 'يوم الأسبوع' : 'Jour de la semaine';
+  String get startTime => isAr ? 'وقت البدء' : 'Heure de début';
+  String get endTime => isAr ? 'وقت النهاية' : 'Heure de fin';
+  String get clearSchedule => isAr ? 'مسح الجدول' : 'Effacer l\'emploi du temps';
 
   // ── Months ──────────────────────────────────────────────────────────────────
   String monthName(int m) {

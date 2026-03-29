@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "354064718130",
+    "project_id": "etudeetude-sync",
+    "storage_bucket": "etudeetude-sync.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:354064718130:android:033808c809572b2223df2b",
+        "android_client_info": {
+          "package_name": "com.etude.etude_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCZ22Yu6uEU4y1OpwJX5_Zmqk9gLHSkRY4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

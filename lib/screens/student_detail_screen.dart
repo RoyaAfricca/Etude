@@ -10,6 +10,7 @@ import '../widgets/status_badge.dart';
 import '../widgets/session_counter_widget.dart';
 import 'student_state_screen.dart';
 import '../utils/auth_helper.dart';
+import '../l10n/app_localizations.dart';
 
 class StudentDetailScreen extends StatelessWidget {
   final String studentId;
@@ -137,6 +138,42 @@ class StudentDetailScreen extends StatelessWidget {
                             const SizedBox(width: 4),
                             Text(
                               student.phone,
+                              style: TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      if (student.email.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.email_outlined,
+                                size: 14, color: AppTheme.textMuted),
+                            const SizedBox(width: 4),
+                            Text(
+                              student.email,
+                              style: TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      if (student.originSchool.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.school_outlined,
+                                size: 14, color: AppTheme.textMuted),
+                            const SizedBox(width: 4),
+                            Text(
+                              student.originSchool,
                               style: TextStyle(
                                 color: AppTheme.textSecondary,
                                 fontSize: 13,
@@ -312,6 +349,53 @@ class StudentDetailScreen extends StatelessWidget {
                           },
                         ),
                       ),
+
+                    // Bouton: Reçu Global Multi-Matières
+                    Builder(builder: (context) {
+                      final otherRegistrations = provider.getRegistrationsByPhone(student.phone)
+                          .where((s) => s.id != student.id).toList();
+                      if (student.phone.isEmpty || otherRegistrations.isEmpty) return const SizedBox.shrink();
+                      return Column(
+                        children: [
+                          const SizedBox(height: 10),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: OutlinedButton.icon(
+                              icon: const Icon(Icons.receipt_long_rounded, size: 20),
+                              label: Text('Reçu Global (${otherRegistrations.length + 1} matières)'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppTheme.primary,
+                                side: const BorderSide(color: AppTheme.primary, width: 1.5),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                                ),
+                                backgroundColor: AppTheme.primary.withOpacity(0.07),
+                              ),
+                              onPressed: () {
+                                final allRegs = provider.getRegistrationsByPhone(student.phone);
+                                final registrations = allRegs.map((s) {
+                                  final g = provider.groups.firstWhere(
+                                    (gr) => gr.id == s.groupId,
+                                    orElse: () => group,
+                                  );
+                                  return <String, dynamic>{
+                                    'group': g,
+                                    'payments': s.payments.where((p) => p.sessionsCount > 0).toList(),
+                                  };
+                                }).toList();
+                                PdfService.printGlobalReceipt(
+                                  context: context,
+                                  studentName: student.name,
+                                  studentPhone: student.phone,
+                                  registrations: registrations,
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      );
+                    }),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -585,13 +669,20 @@ class StudentDetailScreen extends StatelessWidget {
                                     ),
                                   )
                                 else
-                                  const Text(
-                                    'Payée',
-                                    style: TextStyle(
-                                      color: AppTheme.success,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w500,
+                                    const Text(
+                                      'Payée',
+                                      style: TextStyle(
+                                        color: AppTheme.success,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline, size: 18, color: AppTheme.danger),
+                                    onPressed: () => _confirmDeletePresence(context, provider, student.id, reversedIndex, date),
+                                    visualDensity: VisualDensity.compact,
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
                                   ),
                               ],
                             ),
@@ -624,20 +715,36 @@ class StudentDetailScreen extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     final months = [
-      'jan',
-      'fév',
-      'mars',
-      'avr',
-      'mai',
-      'juin',
-      'juil',
-      'août',
-      'sep',
-      'oct',
-      'nov',
-      'déc'
+      'jan', 'fév', 'mars', 'avr', 'mai', 'juin',
+      'juil', 'août', 'sep', 'oct', 'nov', 'déc'
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year} à ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  void _confirmDeletePresence(BuildContext context, AppProvider provider, String studentId, int index, DateTime date) {
+    final l = AppLocalizations.of(context);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.surface,
+        title: Text(l.confirmDeletePresence),
+        content: Text(l.deletePresenceDesc),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l.cancel),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.danger),
+            onPressed: () {
+              provider.removeAttendance(studentId, index);
+              Navigator.pop(ctx);
+            },
+            child: Text(l.delete, style: const TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showPaymentDialog(

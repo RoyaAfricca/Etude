@@ -4,11 +4,13 @@ import 'package:uuid/uuid.dart';
 
 import '../models/student_model.dart';
 import '../models/group_model.dart';
+import '../models/schedule_slot.dart';
 import '../models/payment_model.dart';
 import '../models/student_status.dart';
 import '../services/student_service.dart';
 import '../services/center_service.dart';
 import '../l10n/app_localizations.dart';
+import '../services/sync_service.dart';
 
 class AppProvider extends ChangeNotifier {
   List<Group> _groups = [];
@@ -19,11 +21,19 @@ class AppProvider extends ChangeNotifier {
   final _langService = LanguageService();
   final _configService = CenterConfigService();
   final _uuid = const Uuid();
+  final _syncService = SyncService();
   String _language = 'fr';
+  bool _cloudSyncEnabled = false;
+  bool _isHolidayMode = false;
+
+  bool get cloudSyncEnabled => _cloudSyncEnabled;
+  bool get isHolidayMode => _isHolidayMode;
+  String get syncKey => _syncService.getSyncKey();
 
   List<Group> get groups => _groups;
   List<Student> get students => _students;
   bool get showRevenue => _showRevenue;
+  bool get isAr => _language == 'ar';
 
   bool get isCenterMode => _isCenterMode;
   String get centerName => _configService.centerName;
@@ -49,6 +59,7 @@ class AppProvider extends ChangeNotifier {
 
     _isCenterMode = _configService.isCenterMode;
     _language = _langService.language;
+    _isHolidayMode = Hive.box('settings').get('is_holiday_mode', defaultValue: false) as bool;
 
     notifyListeners();
   }
@@ -81,9 +92,55 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> toggleCloudSync(bool enabled) async {
+    _cloudSyncEnabled = enabled;
+    if (enabled) {
+      await _syncService.initSync(this);
+      // Pousser les données initiales vers le cloud lors de la première activation
+      await _syncService.syncAll(this);
+    } else {
+      _syncService.stopSync();
+    }
+    notifyListeners();
+  }
+
+  Future<void> setSyncKey(String key) async {
+    final settingsBox = Hive.box('settings');
+    await settingsBox.put('sync_key', key);
+    if (_cloudSyncEnabled) {
+      await _syncService.initSync(this, overrideKey: key);
+    }
+    await refreshStudents();
+    await refreshGroups();
+    notifyListeners();
+  }
+
+  Future<void> setHolidayMode(bool enabled) async {
+    _isHolidayMode = enabled;
+    await Hive.box('settings').put('is_holiday_mode', enabled);
+    notifyListeners();
+  }
+
+  Future<void> refreshStudents() async {
+    final box = Hive.box<Student>('students');
+    _students = box.values.toList();
+    notifyListeners();
+  }
+
+  Future<void> refreshGroups() async {
+    final box = Hive.box<Group>('groups');
+    _groups = box.values.toList();
+    notifyListeners();
+  }
+
   // ── Groups ──
-  Future<void> addGroup(String name, String subject, String schedule, 
-      {String? teacherId, String? roomName, String? level, String? grade}) async {
+  Future<void> addGroup(String name, String subject, String schedule,
+      {String? teacherId,
+      String? roomName,
+      String? level,
+      String? grade,
+      List<ScheduleSlot>? regularSlots,
+      List<ScheduleSlot>? holidaySlots}) async {
     final group = Group(
       id: _uuid.v4(),
       name: name,
@@ -93,10 +150,21 @@ class AppProvider extends ChangeNotifier {
       roomName: roomName,
       level: level,
       grade: grade,
+      regularSlots: regularSlots,
+      holidaySlots: holidaySlots,
     );
+    await addGroupObj(group);
+  }
+
+  Future<void> addGroupObj(Group group) async {
     final box = Hive.box<Group>('groups');
     await box.put(group.id, group);
     _groups.add(group);
+    
+    if (_cloudSyncEnabled) {
+      _syncService.pushGroup(group);
+    }
+    
     notifyListeners();
   }
 
@@ -112,8 +180,24 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateGroupSchedules(String groupId, List<ScheduleSlot> regular, List<ScheduleSlot> holiday) async {
+    final index = _groups.indexWhere((g) => g.id == groupId);
+    if (index == -1) return;
+    
+    _groups[index].regularSlots = regular;
+    _groups[index].holidaySlots = holiday;
+    
+    final box = Hive.box<Group>('groups');
+    await box.put(groupId, _groups[index]);
+    
+    if (_cloudSyncEnabled) {
+      _syncService.pushGroup(_groups[index]);
+    }
+    
+    notifyListeners();
+  }
+
   Future<void> deleteGroup(String id) async {
-    // Delete all students in the group
     final studentsToDelete = _students.where((s) => s.groupId == id).toList();
     final studentBox = Hive.box<Student>('students');
     for (final s in studentsToDelete) {
@@ -126,17 +210,44 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Helper for multi-subject students
+  List<Student> getRegistrationsByPhone(String phone) {
+    if (phone.trim().isEmpty) return [];
+    return _students.where((s) => s.phone.trim() == phone.trim()).toList();
+  }
+
+  bool hasPaidEnrollmentFee(String phone) {
+    if (phone.trim().isEmpty) return false;
+    final regs = getRegistrationsByPhone(phone);
+    for (final s in regs) {
+      if (s.payments.any((p) => p.sessionsCount == 0 && p.amount > 0)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   // ── Students ──
   Future<void> addStudent(
       String name, String phone, String groupId, double price,
-      {double enrollmentFeeAmount = 0.0}) async {
+      {double enrollmentFeeAmount = 0.0,
+      String email = '',
+      String originSchool = '',
+      int sessionsSincePayment = 0}) async {
     final student = Student(
       id: _uuid.v4(),
       name: name,
       phone: phone,
       groupId: groupId,
       pricePerCycle: price,
+      email: email,
+      originSchool: originSchool,
+      sessionsSincePayment: sessionsSincePayment,
     );
+    await addStudentObj(student, enrollmentFeeAmount: enrollmentFeeAmount);
+  }
+
+  Future<void> addStudentObj(Student student, {double enrollmentFeeAmount = 0.0}) async {
     final box = Hive.box<Student>('students');
     // Si frais d'inscription, on l'enregistre comme paiement (sessionsCount = 0)
     if (enrollmentFeeAmount > 0) {
@@ -150,12 +261,18 @@ class AppProvider extends ChangeNotifier {
     await box.put(student.id, student);
     _students.add(student);
 
+    if (_cloudSyncEnabled) {
+      _syncService.pushStudent(student);
+    }
+
     // Add student ID to group
-    final groupIndex = _groups.indexWhere((g) => g.id == groupId);
+    final groupIndex = _groups.indexWhere((g) => g.id == student.groupId);
     if (groupIndex != -1) {
-      _groups[groupIndex].studentIds.add(student.id);
-      final groupBox = Hive.box<Group>('groups');
-      await groupBox.put(groupId, _groups[groupIndex]);
+      if (!_groups[groupIndex].studentIds.contains(student.id)) {
+        _groups[groupIndex].studentIds.add(student.id);
+        final groupBox = Hive.box<Group>('groups');
+        await groupBox.put(student.groupId, _groups[groupIndex]);
+      }
     }
     notifyListeners();
   }
@@ -183,7 +300,32 @@ class AppProvider extends ChangeNotifier {
     _students[index].attendances.add(DateTime.now());
     final box = Hive.box<Student>('students');
     await box.put(studentId, _students[index]);
+    
+    if (_cloudSyncEnabled) {
+      _syncService.pushAttendance(studentId, _students[index].sessionsSincePayment);
+    }
+    
     notifyListeners();
+  }
+
+  Future<void> removeAttendance(String studentId, int index) async {
+    final sIndex = _students.indexWhere((s) => s.id == studentId);
+    if (sIndex == -1) return;
+    
+    final student = _students[sIndex];
+    if (index >= 0 && index < student.attendances.length) {
+      student.attendances.removeAt(index);
+      student.sessionsSincePayment--;
+      
+      final box = Hive.box<Student>('students');
+      await box.put(studentId, student);
+      
+      if (_cloudSyncEnabled) {
+        _syncService.pushStudentAttendances(studentId, student.sessionsSincePayment, student.attendances);
+      }
+      
+      notifyListeners();
+    }
   }
 
   Future<void> markGroupAttendance(String groupId) async {
@@ -193,6 +335,9 @@ class AppProvider extends ChangeNotifier {
       student.sessionsSincePayment++;
       student.attendances.add(DateTime.now());
       await box.put(student.id, student);
+      if (_cloudSyncEnabled) {
+        _syncService.pushAttendance(student.id, student.sessionsSincePayment);
+      }
     }
     notifyListeners();
   }
@@ -205,6 +350,9 @@ class AppProvider extends ChangeNotifier {
         _students[index].sessionsSincePayment++;
         _students[index].attendances.add(date);
         await box.put(id, _students[index]);
+        if (_cloudSyncEnabled) {
+          _syncService.pushAttendance(id, _students[index].sessionsSincePayment);
+        }
       }
     }
     notifyListeners();
@@ -293,6 +441,40 @@ class AppProvider extends ChangeNotifier {
       if (stats.totalStudents == 0) return false;
       return stats.overduePercent > 30;
     }).toList();
+  }
+
+  // ── Scheduling Queries ──
+  List<Group> getGroupsForRoom(String roomName) {
+    return _groups.where((g) => g.roomName == roomName).toList();
+  }
+
+  List<Group> getOccupyingGroupsAt(String roomName, int day, int hour, int minute) {
+    return _groups.where((g) {
+      if (g.roomName != roomName) return false;
+      final slots = _isHolidayMode ? g.holidaySlots : g.regularSlots;
+      final queryTime = hour * 60 + minute;
+      
+      return slots.any((slot) {
+        if (slot.dayOfWeek != day) return false;
+        final start = slot.startHour * 60 + slot.startMinute;
+        final end = slot.endHour * 60 + slot.endMinute;
+        return queryTime >= start && queryTime < end;
+      });
+    }).toList();
+  }
+
+  List<String> getFreeRoomsAt(int day, int hour, int minute) {
+    final allRooms = rooms;
+    final busyRooms = _groups.expand((g) {
+      final slots = _isHolidayMode ? g.holidaySlots : g.regularSlots;
+      final queryTime = hour * 60 + minute;
+      if (slots.any((s) => s.dayOfWeek == day && (queryTime >= (s.startHour*60+s.startMinute) && queryTime < (s.endHour*60+s.endMinute)))) {
+        return [g.roomName];
+      }
+      return [];
+    }).toSet();
+    
+    return allRooms.where((r) => !busyRooms.contains(r)).toList();
   }
 
   /// Wipes all students and their data (payments + attendances).

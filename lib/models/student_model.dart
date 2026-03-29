@@ -29,6 +29,12 @@ class Student extends HiveObject {
   @HiveField(7)
   String groupId;
 
+  @HiveField(8)
+  String email;
+
+  @HiveField(9)
+  String originSchool;
+
   Student({
     required this.id,
     required this.name,
@@ -38,6 +44,8 @@ class Student extends HiveObject {
     List<DateTime>? attendances,
     List<Payment>? payments,
     required this.groupId,
+    this.email = '',
+    this.originSchool = '',
   })  : attendances = attendances ?? [],
         payments = payments ?? [];
 

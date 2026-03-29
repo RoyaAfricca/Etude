@@ -289,20 +289,31 @@ class _TeacherReportCard extends StatelessWidget {
           // Stats financières
           Row(
             children: [
-              _StatChip(
-                label: l.grossRevenue,
-                value: '${totalRevenue.toInt()} ${l.currency}',
-                color: AppTheme.primary,
-              ),
+              if (teacher.contractType != TeacherContractType.locateur)
+                _StatChip(
+                  label: l.grossRevenue,
+                  value: '${totalRevenue.toInt()} ${l.currency}',
+                  color: AppTheme.primary,
+                )
+              else
+                _StatChip(
+                  label: 'Séances effectuées',
+                  value: '$totalSessions',
+                  color: AppTheme.primary,
+                ),
               const SizedBox(width: 8),
               _StatChip(
-                label: l.toTeacher,
+                label: teacher.contractType == TeacherContractType.locateur 
+                    ? 'Bénéfice Professeur' 
+                    : l.toTeacher,
                 value: '${teacherShare.toInt()} ${l.currency}',
                 color: AppTheme.success,
               ),
               const SizedBox(width: 8),
               _StatChip(
-                label: l.toCenter,
+                label: teacher.contractType == TeacherContractType.locateur 
+                    ? 'Loyer Centre' 
+                    : l.toCenter,
                 value: '${centerShare.toInt()} ${l.currency}',
                 color: AppTheme.accent,
               ),

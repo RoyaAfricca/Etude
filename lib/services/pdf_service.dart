@@ -977,4 +977,131 @@ class PdfService {
           ],
         ),
       );
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 5. REÇU GLOBAL MULTI-MATIÈRES
+  // ─────────────────────────────────────────────────────────────────────────────
+  /// Imprime un reçu unique regroupant tous les paiements d'un élève
+  /// inscrit dans plusieurs groupes/matières.
+  static Future<void> printGlobalReceipt({
+    required BuildContext context,
+    required String studentName,
+    required String studentPhone,
+    required List<Map<String, dynamic>> registrations, // [{group, payments, subject}]
+  }) async {
+    final l = _l10n();
+    final rtl = l.isAr;
+    final centerName = _configService.centerName;
+    final logoBase64 = _configService.centerLogoBase64;
+    pw.MemoryImage? logoImage;
+    if (logoBase64 != null && logoBase64.isNotEmpty) {
+      logoImage = pw.MemoryImage(base64Decode(logoBase64));
+    }
+
+    final pdf = pw.Document();
+
+    // Calcul du total global
+    double grandTotal = 0;
+    for (final reg in registrations) {
+      final payments = reg['payments'] as List<Payment>;
+      grandTotal += payments.fold(0.0, (s, p) => s + p.amount);
+    }
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a5,
+        margin: const pw.EdgeInsets.all(28),
+        build: (ctx) => [
+          _header(
+            title: centerName,
+            subtitle: 'Reçu Global – Toutes Matières',
+            rightTop: 'Date: ${_fmtDate(DateTime.now())}',
+            rightBottom: studentName,
+            logo: logoImage,
+            rtl: rtl,
+          ),
+          pw.SizedBox(height: 20),
+          _sectionTitle('ÉLÈVE'),
+          _infoRow('Nom', studentName, rtl: rtl),
+          pw.SizedBox(height: 4),
+          if (studentPhone.isNotEmpty) ...[
+            _infoRow('Téléphone', studentPhone, rtl: rtl),
+            pw.SizedBox(height: 4),
+          ],
+          pw.SizedBox(height: 16),
+          _sectionTitle('DÉTAIL PAR MATIÈRE'),
+          ...registrations.map((reg) {
+            final group = reg['group'] as Group;
+            final payments = reg['payments'] as List<Payment>;
+            final subtotal = payments.fold(0.0, (s, p) => s + p.amount);
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Container(
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  margin: const pw.EdgeInsets.only(bottom: 4),
+                  decoration: pw.BoxDecoration(
+                    color: _PdfColors2.primaryLight,
+                    borderRadius: pw.BorderRadius.circular(4),
+                  ),
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text(group.name,
+                          style: pw.TextStyle(
+                              fontSize: 11, fontWeight: pw.FontWeight.bold,
+                              color: _PdfColors2.primaryDark)),
+                      pw.Text(_fmtAmount(subtotal, l),
+                          style: pw.TextStyle(
+                              fontSize: 11, fontWeight: pw.FontWeight.bold,
+                              color: _PdfColors2.primary)),
+                    ],
+                  ),
+                ),
+                pw.SizedBox(height: 2),
+                _infoRow('Matière', group.subject, rtl: rtl),
+                pw.SizedBox(height: 2),
+                if (payments.isNotEmpty)
+                  pw.Text(
+                    'Dernier paiement: ${_fmtDate(payments.last.date)}',
+                    style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
+                  ),
+                pw.SizedBox(height: 10),
+              ],
+            );
+          }),
+          pw.Divider(color: _PdfColors2.primary, thickness: 1.5),
+          pw.SizedBox(height: 8),
+          pw.Container(
+            padding: const pw.EdgeInsets.all(14),
+            decoration: pw.BoxDecoration(
+              color: _PdfColors2.primaryLight,
+              borderRadius: pw.BorderRadius.circular(8),
+              border: pw.Border.all(color: _PdfColors2.primary, width: 1.5),
+            ),
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('TOTAL GLOBAL',
+                    style: pw.TextStyle(
+                        fontSize: 13, fontWeight: pw.FontWeight.bold,
+                        color: _PdfColors2.primaryDark)),
+                pw.Text(_fmtAmount(grandTotal, l),
+                    style: pw.TextStyle(
+                        fontSize: 20, fontWeight: pw.FontWeight.bold,
+                        color: _PdfColors2.primary)),
+              ],
+            ),
+          ),
+          pw.Spacer(),
+          _footer(l),
+        ],
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (_) async => pdf.save(),
+      name: 'Recu_Global_$studentName',
+    );
+  }
 }

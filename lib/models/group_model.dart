@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'schedule_slot.dart';
 
 part 'group_model.g.dart';
 
@@ -31,6 +32,12 @@ class Group extends HiveObject {
   @HiveField(8, defaultValue: '')
   String? grade;
 
+  @HiveField(9)
+  List<ScheduleSlot> regularSlots;
+
+  @HiveField(10)
+  List<ScheduleSlot> holidaySlots;
+
   Group({
     required this.id,
     required this.name,
@@ -41,5 +48,9 @@ class Group extends HiveObject {
     this.roomName,
     this.level,
     this.grade,
-  }) : studentIds = studentIds ?? [];
+    List<ScheduleSlot>? regularSlots,
+    List<ScheduleSlot>? holidaySlots,
+  })  : studentIds = studentIds ?? [],
+        regularSlots = regularSlots ?? [],
+        holidaySlots = holidaySlots ?? [];
 }

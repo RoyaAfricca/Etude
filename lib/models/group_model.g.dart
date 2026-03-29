@@ -26,13 +26,15 @@ class GroupAdapter extends TypeAdapter<Group> {
       roomName: fields[6] == null ? '' : fields[6] as String?,
       level: fields[7] == null ? '' : fields[7] as String?,
       grade: fields[8] == null ? '' : fields[8] as String?,
+      regularSlots: (fields[9] as List?)?.cast<ScheduleSlot>(),
+      holidaySlots: (fields[10] as List?)?.cast<ScheduleSlot>(),
     );
   }
 
   @override
   void write(BinaryWriter writer, Group obj) {
     writer
-      ..writeByte(9)
+      ..writeByte(11)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -50,7 +52,11 @@ class GroupAdapter extends TypeAdapter<Group> {
       ..writeByte(7)
       ..write(obj.level)
       ..writeByte(8)
-      ..write(obj.grade);
+      ..write(obj.grade)
+      ..writeByte(9)
+      ..write(obj.regularSlots)
+      ..writeByte(10)
+      ..write(obj.holidaySlots);
   }
 
   @override

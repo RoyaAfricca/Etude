@@ -4,5 +4,6 @@
   ],
   "files.exclude": {
     "**/flutter": true
-  }
+  },
+  "java.configuration.updateBuildConfiguration": "interactive"
 }
