@@ -16,6 +16,7 @@ import '../models/schedule_slot.dart';
 import '../widgets/group_edit_dialog.dart';
 import '../widgets/group_notify_dialog.dart';
 import '../l10n/app_localizations.dart';
+import '../utils/phone_validator.dart';
 
 
 class GroupDetailScreen extends StatefulWidget {
@@ -585,7 +586,16 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                   ),
                   onChanged: (val) {
                     if (enrollmentFee > 0) {
-                      final alreadyPaid = provider.hasPaidEnrollmentFee(val);
+                      // Vérifier si AU MOINS UN des numéros a déjà payé les frais
+                      final nums = PhoneValidator.cleanAndSplit(val);
+                      bool alreadyPaid = false;
+                      for (var n in nums) {
+                        if (provider.hasPaidEnrollmentFee(n)) {
+                          alreadyPaid = true;
+                          break;
+                        }
+                      }
+                      
                       if (alreadyPaid && chargeEnrollmentFee) {
                         setSt(() {
                           chargeEnrollmentFee = false;
@@ -598,7 +608,19 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                         });
                       }
                     }
+                    setSt(() {}); // Pour canCreate
                   },
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: emailCtl,
+                  keyboardType: TextInputType.emailAddress,
+                  style: const TextStyle(color: AppTheme.textPrimary),
+                  decoration: const InputDecoration(
+                    labelText: 'Email (optionnel)',
+                    prefixIcon:
+                        Icon(Icons.email_outlined, color: AppTheme.primary),
+                  ),
                 ),
                 if (feeAutoExempted)
                   Padding(
@@ -745,11 +767,23 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                   height: 52,
                   child: ElevatedButton(
                     onPressed: () {
-                      if (nameCtl.text.trim().isEmpty) return;
+                      final name = nameCtl.text.trim();
+                      final phone = phoneCtl.text.trim();
+                      final phonesList = PhoneValidator.cleanAndSplit(phone);
+                      
+                      if (name.isEmpty) return;
+                      // Validation: si téléphone présent, il doit être valide (8 chiffres)
+                      if (phone.isNotEmpty && !PhoneValidator.isValidTunisianList(phonesList)) {
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          const SnackBar(content: Text('Chaque numéro doit faire 8 chiffres (Tunisie)')),
+                        );
+                        return;
+                      }
+
                       final price = double.tryParse(priceCtl.text) ?? 200;
                       provider.addStudent(
-                        nameCtl.text.trim(),
-                        phoneCtl.text.trim(),
+                        name,
+                        phone,
                         widget.groupId,
                         selectedPaymentMode == kPaymentModeCycle ? price : 200,
                         enrollmentFeeAmount:

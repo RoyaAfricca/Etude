@@ -7,6 +7,7 @@ import '../services/notification_service.dart';
 import '../services/sync_service.dart';
 import '../providers/app_provider.dart';
 import '../theme/app_theme.dart';
+import '../utils/phone_validator.dart';
 
 enum NotificationMethod { sms, email, whatsapp }
 
@@ -88,10 +89,13 @@ class _GroupNotifyDialogState extends State<GroupNotifyDialog> {
             .toList();
       case NotificationMethod.sms:
       case NotificationMethod.whatsapp:
-        return widget.students
-            .map((s) => s.phone)
-            .where((p) => p.isNotEmpty)
-            .toList();
+        final allPhones = <String>[];
+        for (final s in widget.students) {
+          if (s.phone.isNotEmpty) {
+            allPhones.addAll(PhoneValidator.cleanAndSplit(s.phone));
+          }
+        }
+        return allPhones;
     }
   }
 
@@ -139,13 +143,14 @@ class _GroupNotifyDialogState extends State<GroupNotifyDialog> {
           break;
         case NotificationMethod.whatsapp:
           if (isPc) {
-            // WhatsApp via le pont
+            // WhatsApp via le pont (on garde le split effectué par _getRecipients)
             await syncService.pushRemoteMessage('whatsapp', recipients.join(','), message);
             success = true;
           } else {
             if (recipients.length == 1) {
               success = await NotificationService.sendWhatsApp(recipients.first, message);
             } else {
+              // Si plusieurs numéros, on privilégie l'ouverture bulk
               success = await NotificationService.sendBulkWhatsApp(recipients, message);
             }
           }

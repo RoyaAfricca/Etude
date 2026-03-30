@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/foundation.dart';
+import '../utils/phone_validator.dart';
 
 class NotificationService {
   static Future<bool> sendBulkSMS(List<String> phoneNumbers, String message) async {
@@ -8,7 +9,7 @@ class NotificationService {
     
     // Nettoyage des numéros
     final cleanNumbers = phoneNumbers
-        .map((p) => p.replaceAll(RegExp(r'[^0-9+]'), ''))
+        .map((p) => PhoneValidator.formatForWhatsApp(p))
         .where((p) => p.isNotEmpty)
         .toList();
 
@@ -50,10 +51,10 @@ class NotificationService {
   static Future<bool> sendWhatsApp(String phoneNumber, String message) async {
     // WhatsApp ne supporte pas nativement l'envoi groupé direct via URL vers plusieurs numéros non enregistrés
     // On ouvre donc la conversation individuelle
-    final cleanNumber = phoneNumber.replaceAll(RegExp(r'[^0-9]'), '');
+    final cleanNumber = PhoneValidator.formatForWhatsApp(phoneNumber);
     if (cleanNumber.isEmpty) return false;
 
-    final Uri uri = Uri.parse('https://wa.me/$cleanNumber?text=${Uri.encodeComponent(message)}');
+    final Uri uri = Uri.parse('https://api.whatsapp.com/send?phone=$cleanNumber&text=${Uri.encodeComponent(message)}');
     
     if (await canLaunchUrl(uri)) {
       return await launchUrl(uri);
@@ -71,15 +72,15 @@ class NotificationService {
     // OU on boucle sur les messages individuels (mais attention au spam/blocage UI)
     
     // Option 1: URL de partage universelle (ouvre WhatsApp et laisse choisir)
-    final Uri uri = Uri.parse('whatsapp://send?text=${Uri.encodeComponent(message)}');
+    final Uri uri = Uri.parse('https://api.whatsapp.com/send?text=${Uri.encodeComponent(message)}');
     
     if (await canLaunchUrl(uri)) {
       return await launchUrl(uri);
     } else {
-      // Fallback vers wa.me sans numéro
-      final Uri webUri = Uri.parse('https://api.whatsapp.com/send?text=${Uri.encodeComponent(message)}');
-      if (await canLaunchUrl(webUri)) {
-        return await launchUrl(webUri);
+      // Fallback vers whatsapp://
+      final Uri appUri = Uri.parse('whatsapp://send?text=${Uri.encodeComponent(message)}');
+      if (await canLaunchUrl(appUri)) {
+        return await launchUrl(appUri);
       }
       return false;
     }

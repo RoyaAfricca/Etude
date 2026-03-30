@@ -330,7 +330,7 @@ class StudentStateScreen extends StatelessWidget {
           ),
           ElevatedButton.icon(
             onPressed: () async {
-              final authenticated = await AuthHelper.showPasswordConfirmation(context);
+              final authenticated = await AuthHelper.authenticate(context, reason: 'Confirmez l\'action par PIN ou Empreinte');
 
               if (!context.mounted) return;
 

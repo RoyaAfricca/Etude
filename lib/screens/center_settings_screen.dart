@@ -9,6 +9,7 @@ import '../services/center_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/auth_helper.dart';
 import '../services/import_service.dart';
+import '../utils/phone_validator.dart';
 import 'qr_sync_screen.dart';
 
 class CenterSettingsScreen extends StatefulWidget {
@@ -262,7 +263,20 @@ class _CenterSettingsScreenState extends State<CenterSettingsScreen>
                   backgroundColor: AppTheme.primary,
                   foregroundColor: Colors.white),
               onPressed: () {
-                if (nameCtrl.text.trim().isEmpty) return;
+                final name = nameCtrl.text.trim();
+                final phone = phoneCtrl.text.trim();
+                final phonesList = PhoneValidator.cleanAndSplit(phone);
+
+                if (name.isEmpty) return;
+                
+                // Validation: si téléphone présent, il doit être valide (8 chiffres)
+                if (phone.isNotEmpty && !PhoneValidator.isValidTunisianList(phonesList)) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    const SnackBar(content: Text('Chaque numéro doit faire 8 chiffres (Tunisie)')),
+                  );
+                  return;
+                }
+                
                 Navigator.pop(ctx, true);
               },
               child: Text(existing == null ? 'Ajouter' : 'Enregistrer'),
@@ -312,7 +326,7 @@ class _CenterSettingsScreenState extends State<CenterSettingsScreen>
           ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: AppTheme.danger),
               onPressed: () async {
-                final authenticated = await AuthHelper.showPasswordConfirmation(context);
+                final authenticated = await AuthHelper.authenticate(context, reason: 'Confirmez l\'action par PIN ou Empreinte');
                 if (authenticated) {
                   Navigator.pop(ctx, true);
                 }

@@ -14,6 +14,7 @@ import '../services/center_service.dart';
 import '../l10n/app_localizations.dart';
 import '../services/sync_service.dart';
 import '../services/notification_service.dart';
+import '../utils/phone_validator.dart';
 import 'dart:async';
 
 class AppProvider extends ChangeNotifier {
@@ -167,10 +168,17 @@ class AppProvider extends ChangeNotifier {
       if (type == 'sms') {
         success = await NotificationService.sendBulkSMS(recipients, body);
       } else if (type == 'whatsapp') {
-        if (recipients.length == 1) {
-          success = await NotificationService.sendWhatsApp(recipients.first, body);
+        // Nettoyage et formatage pour WhatsApp
+        final cleanRecipients = recipients
+            .map((r) => PhoneValidator.formatForWhatsApp(r))
+            .where((r) => r.isNotEmpty)
+            .toList();
+            
+        if (cleanRecipients.length == 1) {
+          success = await NotificationService.sendWhatsApp(cleanRecipients.first, body);
         } else {
-          success = await NotificationService.sendBulkWhatsApp(recipients, body);
+          // Note: sendBulkWhatsApp ignore les numéros car l'API WA multi-destinataire n'existe pas en URL
+          success = await NotificationService.sendBulkWhatsApp(cleanRecipients, body);
         }
       }
       
@@ -319,6 +327,18 @@ class AppProvider extends ChangeNotifier {
       }
     }
     return false;
+  }
+
+  Future<void> updateStudent(String id, String name, String phone, String email) async {
+    final index = _students.indexWhere((s) => s.id == id);
+    if (index == -1) return;
+    _students[index].name = name;
+    _students[index].phone = phone;
+    _students[index].email = email;
+    final box = Hive.box<Student>('students');
+    await box.put(id, _students[index]);
+    if (_cloudSyncEnabled) _syncService.pushStudent(_students[index]);
+    notifyListeners();
   }
 
   // ── Students ──

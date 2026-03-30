@@ -1,9 +1,43 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:local_auth/local_auth.dart';
 import '../services/center_service.dart';
 import '../theme/app_theme.dart';
 
 class AuthHelper {
+  /// Méthode principale d'authentification. 
+  /// Tente la biométrie (ou PIN téléphone) sur mobile, sinon bascule sur le mot de passe.
+  static Future<bool> authenticate(BuildContext context, {String? reason}) async {
+    if (Platform.isWindows) {
+      return await _showPasswordDialog(context);
+    }
+
+    final auth = LocalAuthentication();
+    try {
+      final canCheck = await auth.canCheckBiometrics;
+      final isSupported = await auth.isDeviceSupported();
+
+      if (canCheck || isSupported) {
+        final bool didAuthenticate = await auth.authenticate(
+          localizedReason: reason ?? 'Veuillez vous authentifier pour continuer',
+        );
+        if (didAuthenticate) return true;
+      }
+    } catch (e) {
+      debugPrint('Auth error: $e');
+    }
+
+    // Fallback sur le mot de passe si la biométrie échoue ou n'est pas disponible
+    return await _showPasswordDialog(context);
+  }
+
+  /// Alias pour la compatibilité avec l'ancien code si nécessaire
   static Future<bool> showPasswordConfirmation(BuildContext context) async {
+    return await _showPasswordDialog(context);
+  }
+
+  /// Boîte de dialogue de confirmation par mot de passe (Fallback)
+  static Future<bool> _showPasswordDialog(BuildContext context) async {
     final passwordCtl = TextEditingController();
     final authService = AppAuthService();
     String? errorText;

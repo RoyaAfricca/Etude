@@ -436,7 +436,7 @@ class GroupsScreen extends StatelessWidget {
           ),
           TextButton(
             onPressed: () async {
-              final authenticated = await AuthHelper.showPasswordConfirmation(context);
+              final authenticated = await AuthHelper.authenticate(context, reason: 'Confirmez la suppression par PIN ou Empreinte');
               if (!context.mounted) return;
               if (authenticated) {
                 provider.deleteGroup(id);

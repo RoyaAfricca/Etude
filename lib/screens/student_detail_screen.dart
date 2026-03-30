@@ -13,6 +13,7 @@ import 'student_state_screen.dart';
 import '../utils/auth_helper.dart';
 import '../l10n/app_localizations.dart';
 import '../widgets/group_notify_dialog.dart';
+import '../utils/phone_validator.dart';
 
 
 class StudentDetailScreen extends StatelessWidget {
@@ -48,11 +49,23 @@ class StudentDetailScreen extends StatelessWidget {
                 icon: Icon(Icons.more_vert, color: AppTheme.textMuted),
                 color: AppTheme.surfaceLight,
                 onSelected: (value) {
-                  if (value == 'delete') {
+                  if (value == 'edit') {
+                    _showEditStudentDialog(context, provider, student);
+                  } else if (value == 'delete') {
                     _showDeleteConfirm(context, provider);
                   }
                 },
                 itemBuilder: (_) => [
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit_outlined, color: AppTheme.primary, size: 18),
+                        SizedBox(width: 8),
+                        Text('Modifier', style: TextStyle(color: AppTheme.textPrimary)),
+                      ],
+                    ),
+                  ),
                   const PopupMenuItem(
                     value: 'delete',
                     child: Row(
@@ -136,12 +149,30 @@ class StudentDetailScreen extends StatelessWidget {
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.phone_outlined,
+                            const Icon(Icons.phone_outlined,
                                 size: 14, color: AppTheme.textMuted),
                             const SizedBox(width: 4),
                             Text(
                               student.phone,
-                              style: TextStyle(
+                              style: const TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      if (student.email.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.email_outlined,
+                                size: 14, color: AppTheme.textMuted),
+                            const SizedBox(width: 4),
+                            Text(
+                              student.email,
+                              style: const TextStyle(
                                 color: AppTheme.textSecondary,
                                 fontSize: 13,
                               ),
@@ -391,7 +422,24 @@ class StudentDetailScreen extends StatelessWidget {
                       ),
                     ),
                     onPressed: () {
-                      GroupNotifyDialog.show(context, [student], student.name);
+                      PhoneValidator.showPhoneSelector(
+                        context,
+                        phoneString: student.phone,
+                        title: 'Informer l\'élève',
+                        onSelected: (phone) {
+                          // On crée un faux étudiant avec le téléphone choisi pour le dialogue
+                          final s = Student(
+                            id: student.id,
+                            name: student.name,
+                            phone: phone,
+                            groupId: student.groupId,
+                            pricePerCycle: student.pricePerCycle,
+                            email: student.email,
+                            originSchool: student.originSchool,
+                          );
+                          GroupNotifyDialog.show(context, [s], student.name);
+                        },
+                      );
                     },
                   ),
                 ),
@@ -975,7 +1023,7 @@ class StudentDetailScreen extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: () async {
                 final authenticated =
-                    await AuthHelper.showPasswordConfirmation(context);
+                    await AuthHelper.authenticate(context, reason: 'Confirmez le paiement par PIN ou Empreinte');
 
                 if (!context.mounted) return;
 
@@ -1065,7 +1113,7 @@ class StudentDetailScreen extends StatelessWidget {
           ),
           TextButton(
             onPressed: () async {
-              final authenticated = await AuthHelper.showPasswordConfirmation(context);
+              final authenticated = await AuthHelper.authenticate(context, reason: 'Confirmez la suppression par PIN ou Empreinte');
 
               if (!context.mounted) return;
 
@@ -1101,6 +1149,120 @@ class StudentDetailScreen extends StatelessWidget {
                 style: TextStyle(color: AppTheme.danger)),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showEditStudentDialog(BuildContext context, AppProvider provider, Student student) {
+    final nameCtl = TextEditingController(text: student.name);
+    final phoneCtl = TextEditingController(text: student.phone);
+    final emailCtl = TextEditingController(text: student.email);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSt) => Padding(
+          padding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 24,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40, height: 4,
+                    decoration: BoxDecoration(
+                      color: AppTheme.textMuted,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Modifier l\'élève',
+                  style: TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: nameCtl,
+                  style: const TextStyle(color: AppTheme.textPrimary),
+                  decoration: const InputDecoration(
+                    labelText: 'Nom de l\'élève',
+                    prefixIcon: Icon(Icons.person_outline, color: AppTheme.primary),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: phoneCtl,
+                  keyboardType: TextInputType.phone,
+                  style: const TextStyle(color: AppTheme.textPrimary),
+                  decoration: const InputDecoration(
+                    labelText: 'Téléphone (ex: 20123456, 55123456)',
+                    prefixIcon: Icon(Icons.phone_outlined, color: AppTheme.primary),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: emailCtl,
+                  keyboardType: TextInputType.emailAddress,
+                  style: const TextStyle(color: AppTheme.textPrimary),
+                  decoration: const InputDecoration(
+                    labelText: 'Email (optionnel)',
+                    prefixIcon: Icon(Icons.email_outlined, color: AppTheme.primary),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      final name = nameCtl.text.trim();
+                      final phone = phoneCtl.text.trim();
+                      final phonesList = PhoneValidator.cleanAndSplit(phone);
+                      
+                      if (name.isEmpty) return;
+                      if (phone.isNotEmpty && !PhoneValidator.isValidTunisianList(phonesList)) {
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          const SnackBar(content: Text('Chaque numéro doit faire 8 chiffres (Tunisie)')),
+                        );
+                        return;
+                      }
+
+                      provider.updateStudent(
+                        student.id,
+                        name,
+                        phone,
+                        emailCtl.text.trim(),
+                      );
+                      Navigator.pop(ctx);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    child: const Text('Enregistrer les modifications', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
