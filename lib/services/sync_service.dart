@@ -6,13 +6,14 @@ import 'package:flutter/foundation.dart';
 import '../models/student_model.dart';
 import '../models/group_model.dart';
 import '../models/schedule_slot.dart';
+import '../models/payment_model.dart';
 import '../services/center_service.dart';
 import '../services/activation_service.dart';
 import '../providers/app_provider.dart';
 
 class SyncService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  FirebaseFirestore get _firestore => FirebaseFirestore.instance;
+  FirebaseAuth get _auth => FirebaseAuth.instance;
   final ActivationService _activationService = ActivationService();
   
   StreamSubscription? _studentsSubscription;
@@ -28,12 +29,7 @@ class SyncService {
   /// Initialise la synchronisation pour le centre
   Future<void> initSync(AppProvider provider, {String? overrideKey}) async {
     try {
-      // 1. Authentification anonyme si non connecté
-      if (_auth.currentUser == null) {
-        await _auth.signInAnonymously();
-      }
-
-      // 2. Récupérer l'ID unique du centre
+      // 1. Récupérer l'ID unique du centre D'ABORD (pour que l'affichage QR fonctionne)
       if (overrideKey != null) {
         _syncKey = overrideKey;
       } else {
@@ -51,6 +47,11 @@ class SyncService {
           await settingsBox.put('sync_key', _syncKey);
         }
       }
+
+      // 2. Authentification anonyme si non connecté (Firebase)
+      if (_auth.currentUser == null) {
+        await _auth.signInAnonymously();
+      }
       
       _isSyncing = true;
       
@@ -60,6 +61,7 @@ class SyncService {
       debugPrint('Sync initialized for Center Key: $_syncKey');
     } catch (e) {
       debugPrint('Error initializing sync: $e');
+      // La clé _syncKey a été générée, on la conserve, mais Firebase n'est pas prêt.
       _isSyncing = false;
     }
   }
@@ -86,12 +88,9 @@ class SyncService {
           final data = change.doc.data();
           if (data != null) {
             final remoteStudent = _mapToStudent(data);
-            // On ne met à jour que si les données locales sont différentes or si c'est un nouvel étudiant
-            final localStudent = box.get(remoteStudent.id);
-            if (localStudent == null || localStudent.sessionsSincePayment != remoteStudent.sessionsSincePayment) {
-              box.put(remoteStudent.id, remoteStudent);
-              provider.refreshStudents(); // Notifier les UI
-            }
+            // On met à jour Hive dès qu'une modification (Paiement, Présence, etc.) arrive du Cloud
+            box.put(remoteStudent.id, remoteStudent);
+            provider.refreshStudents(); // Notifier les UI
           }
         }
       }
@@ -105,11 +104,68 @@ class SyncService {
           final data = change.doc.data();
           if (data != null) {
             final remoteGroup = _mapToGroup(data);
-            final localGroup = box.get(remoteGroup.id);
-            if (localGroup == null) {
-              box.put(remoteGroup.id, remoteGroup);
-              provider.refreshGroups();
+            box.put(remoteGroup.id, remoteGroup);
+            provider.refreshGroups();
+          }
+        } else if (change.type == DocumentChangeType.removed) {
+          box.delete(change.doc.id);
+          provider.refreshGroups();
+        }
+      }
+    });
+
+    // Écouter les enseignants
+    _teachersSubscription = centerRef.collection('teachers').snapshots().listen((snapshot) {
+      for (var change in snapshot.docChanges) {
+        if (change.type == DocumentChangeType.added || change.type == DocumentChangeType.modified) {
+          final data = change.doc.data();
+          if (data != null) {
+            final remoteTeacher = Teacher.fromJson(data);
+            final configService = CenterConfigService();
+            final teachers = configService.teachers;
+            final idx = teachers.indexWhere((t) => t.id == remoteTeacher.id);
+            if (idx == -1) {
+              teachers.add(remoteTeacher);
+            } else {
+              teachers[idx] = remoteTeacher;
             }
+            configService.saveTeachers(teachers);
+            provider.refreshData(); // Utilise une nouvelle méthode publique pour tout rafraîchir
+          }
+        }
+      }
+    });
+
+    // Écouter les réglages du centre (Nom, Salles, Frais)
+    centerRef.snapshots().listen((doc) {
+      if (doc.exists && doc.data() != null) {
+        final data = doc.data()!;
+        final configService = CenterConfigService();
+        if (data.containsKey('centerName')) configService.saveCenterName(data['centerName']);
+        if (data.containsKey('rooms')) {
+          final rooms = (data['rooms'] as List).cast<String>();
+          configService.saveRooms(rooms);
+        }
+        if (data.containsKey('enrollmentFee')) {
+          configService.saveEnrollmentFee((data['enrollmentFee'] as num).toDouble());
+        }
+        provider.refreshData();
+      }
+    });
+
+    // Écouter les suppressions d'élèves
+    _studentsSubscription?.onData((snapshot) {
+      final box = Hive.box<Student>('students');
+      for (var change in snapshot.docChanges) {
+        if (change.type == DocumentChangeType.removed) {
+          box.delete(change.doc.id);
+          provider.refreshStudents();
+        } else if (change.type == DocumentChangeType.added || change.type == DocumentChangeType.modified) {
+          final data = change.doc.data();
+          if (data != null) {
+            final remoteStudent = _mapToStudent(data);
+            box.put(remoteStudent.id, remoteStudent);
+            provider.refreshStudents();
           }
         }
       }
@@ -126,6 +182,13 @@ class SyncService {
       groupId: data['groupId'],
       pricePerCycle: (data['pricePerCycle'] ?? 0).toDouble(),
       sessionsSincePayment: data['sessionsSincePayment'] ?? 0,
+      attendances: (data['attendances'] as List? ?? []).map((e) => DateTime.parse(e as String)).toList(),
+      payments: (data['payments'] as List? ?? []).map((p) => Payment(
+        id: p['id'],
+        date: DateTime.parse(p['date']),
+        amount: (p['amount'] as num).toDouble(),
+        sessionsCount: p['sessionsCount'] ?? 4,
+      )).toList(),
     );
   }
 
@@ -175,6 +238,12 @@ class SyncService {
         'pricePerCycle': student.pricePerCycle,
         'sessionsSincePayment': student.sessionsSincePayment,
         'attendances': student.attendances.map((d) => d.toIso8601String()).toList(),
+        'payments': student.payments.map((p) => {
+          'id': p.id,
+          'date': p.date.toIso8601String(),
+          'amount': p.amount,
+          'sessionsCount': p.sessionsCount,
+        }).toList(),
         'lastUpdate': FieldValue.serverTimestamp(),
       });
     } catch (e) {
@@ -264,6 +333,10 @@ class SyncService {
     
     debugPrint('Starting full sync to cloud...');
     
+    // Push center settings
+    await pushCenterSettings(
+        provider.centerName, provider.rooms, provider.enrollmentFee);
+
     // Push teachers
     for (var teacher in provider.teachers) {
       await pushTeacher(teacher);
@@ -298,6 +371,39 @@ class SyncService {
       });
     } catch (e) {
       debugPrint('Error pushing student attendances: $e');
+    }
+  }
+
+  /// Pousse les réglages du centre
+  Future<void> pushCenterSettings(String name, List<String> rooms, double enrollmentFee) async {
+    if (!_isSyncing || _syncKey == null) return;
+    try {
+      await _firestore.collection('centers').doc(_syncKey).set({
+        'centerName': name,
+        'rooms': rooms,
+        'enrollmentFee': enrollmentFee,
+        'lastUpdate': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (e) {
+      debugPrint('Error pushing center settings: $e');
+    }
+  }
+
+  Future<void> deleteStudentCloud(String studentId) async {
+    if (!_isSyncing || _syncKey == null) return;
+    try {
+      await _firestore.collection('centers').doc(_syncKey).collection('students').doc(studentId).delete();
+    } catch (e) {
+      debugPrint('Error deleting student from cloud: $e');
+    }
+  }
+
+  Future<void> deleteGroupCloud(String groupId) async {
+    if (!_isSyncing || _syncKey == null) return;
+    try {
+      await _firestore.collection('centers').doc(_syncKey).collection('groups').doc(groupId).delete();
+    } catch (e) {
+      debugPrint('Error deleting group from cloud: $e');
     }
   }
 

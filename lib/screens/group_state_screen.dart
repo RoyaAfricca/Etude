@@ -21,7 +21,7 @@ class GroupStateScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: Text("État du groupe: ${group.name}"),
+        title: Text("État: ${group.subject} - ${group.name}"),
         backgroundColor: AppTheme.surface,
         foregroundColor: AppTheme.textPrimary,
         elevation: 0,
@@ -39,8 +39,6 @@ class GroupStateScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                   Text('Matière: ${group.subject}', style: const TextStyle(color: AppTheme.textPrimary, fontSize: 16)),
-                   const SizedBox(height: 4),
                    Text('Horaire: ${group.schedule}', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14)),
                    const SizedBox(height: 12),
                    Row(

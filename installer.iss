@@ -1,4 +1,5 @@
 [Setup]
+AppId={{85FB3E06-99D1-486A-AE43-45B2D8462512}}
 AppName=Étude
 AppVersion=1.1.0.2
 AppPublisher=RoyaAfricca
@@ -22,6 +23,7 @@ Source: "E:\etude\build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: 
 
 [Icons]
 Name: "{group}\Étude"; Filename: "{app}\etude.exe"
+Name: "{group}\Désinstaller Étude"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\Étude"; Filename: "{app}\etude.exe"; Tasks: desktopicon
 
 [Run]

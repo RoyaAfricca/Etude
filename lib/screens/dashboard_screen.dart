@@ -978,7 +978,7 @@ class _ProblematicGroupCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  name,
+                  '$subject - $name',
                   style: const TextStyle(
                     color: AppTheme.textPrimary,
                     fontWeight: FontWeight.w600,
@@ -1072,7 +1072,7 @@ class _GroupMiniCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        name,
+                        '$subject - $name',
                         style: const TextStyle(
                           color: AppTheme.textPrimary,
                           fontWeight: FontWeight.w600,
@@ -1081,7 +1081,7 @@ class _GroupMiniCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '$subject • ${stats.totalStudents} élèves',
+                        '${stats.totalStudents} élèves',
                         style: TextStyle(
                           color: AppTheme.textSecondary,
                           fontSize: 12,

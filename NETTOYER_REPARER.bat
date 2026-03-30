@@ -2,6 +2,11 @@
 title ETUDE - Reparation et Compilation Complete
 cd /d "E:\etude"
 
+set "PUB_CACHE=E:\.pub-cache"
+set "GRADLE_USER_HOME=E:\.gradle"
+if not exist "%PUB_CACHE%" mkdir "%PUB_CACHE%"
+if not exist "%GRADLE_USER_HOME%" mkdir "%GRADLE_USER_HOME%"
+
 echo.
 echo ========================================================
 echo  1. DESTRUCTION DES PROCESSUS FANTOMES...

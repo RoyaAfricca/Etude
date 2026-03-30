@@ -10,7 +10,12 @@ echo.
 echo Cette operation peut prendre quelques minutes (telechargement des dependances, compilation...)
 echo.
 
-call C:\Users\solta\develop\flutter\bin\flutter.bat build apk --release
+set "PUB_CACHE=E:\.pub-cache"
+set "GRADLE_USER_HOME=E:\.gradle"
+if not exist "%PUB_CACHE%" mkdir "%PUB_CACHE%"
+if not exist "%GRADLE_USER_HOME%" mkdir "%GRADLE_USER_HOME%"
+
+call C:\Users\solta\develop\flutter\bin\flutter.bat build apk --release --target-platform android-arm,android-arm64,android-x64
 
 if errorlevel 1 (
     color 0C

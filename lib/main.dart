@@ -8,6 +8,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 
 import 'models/student_model.dart';
 import 'models/group_model.dart';
@@ -27,20 +29,31 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  try {
-    await Firebase.initializeApp();
-  } catch (e) {
-    debugPrint('Firebase initialization error: $e. Make sure google-services.json is present.');
-  }
-
-  // Initialize intl localization for French and Arabic dates
+  // 1. Initialize local services (Critical for UI and Data)
   await initializeDateFormatting('fr_FR', null);
   await initializeDateFormatting('ar_SA', null);
 
-  // Initialize Hive
+  Directory dataDir;
   if (!kIsWeb && Platform.isWindows) {
-    final appPath = File(Platform.resolvedExecutable).parent.path;
-    final dataDir = Directory('$appPath\\etude_data');
+    final supportDir = await getApplicationSupportDirectory();
+    dataDir = Directory(p.join(supportDir.path, 'etude_data'));
+    
+    // Migration logic from legacy folder
+    final oldDir = Directory(p.join(p.dirname(Platform.resolvedExecutable), 'etude_data'));
+    if (oldDir.existsSync() && !dataDir.existsSync()) {
+      try {
+        debugPrint('Migrating data from ${oldDir.path} to ${dataDir.path}');
+        dataDir.createSync(recursive: true);
+        for (var file in oldDir.listSync()) {
+          if (file is File) {
+            file.copySync(p.join(dataDir.path, p.basename(file.path)));
+          }
+        }
+      } catch (e) {
+        debugPrint('Migration error: $e');
+      }
+    }
+    
     if (!dataDir.existsSync()) {
       dataDir.createSync(recursive: true);
     }
@@ -58,6 +71,25 @@ void main() async {
   await Hive.openBox<Student>('students');
   await Hive.openBox<Group>('groups');
   await Hive.openBox('settings');
+
+  // 2. Initialize Cloud services (Non-blocking or at least after UI/Data ready)
+  try {
+    if (!kIsWeb && Platform.isWindows) {
+      await Firebase.initializeApp(
+        options: const FirebaseOptions(
+          apiKey: "AIzaSyCZ22Yu6uEU4y1OpwJX5_Zmqk9gLHSkRY4",
+          appId: "1:354064718130:android:033808c809572b2223df2b",
+          messagingSenderId: "354064718130",
+          projectId: "etudeetude-sync",
+          storageBucket: "etudeetude-sync.firebasestorage.app",
+        ),
+      );
+    } else {
+      await Firebase.initializeApp();
+    }
+  } catch (e) {
+    debugPrint('Firebase initialization error: $e. Cloud sync will be disabled.');
+  }
 
   // Set status bar style (mobile only)
   if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {

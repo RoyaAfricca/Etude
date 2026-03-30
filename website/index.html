@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Étude - Gestion Intelligente de vos Séances</title>
     <meta name="description" content="Découvrez Étude, l'application ultime pour gérer, suivre et optimiser vos séances d'étude. Disponible sur Android et Windows.">
+    <!-- Enforce SSL -->
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+    <script>
+        if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+            location.replace('https:' + location.href.substring(location.protocol.length));
+        }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
@@ -485,7 +492,7 @@
             <h2>Prêt à démarrer ?</h2>
             <p>Installez Étude sur votre appareil et gérez vos séances dès aujourd'hui.</p>
             <div class="download-buttons">
-                <a href="application_etude.apk" download="application_etude.apk" class="btn-download pulse-btn">
+                <a href="app-Etude.apk" download="app-Etude.apk" class="btn-download pulse-btn">
                     <div class="dl-icon"><i class="fa-brands fa-android"></i></div>
                     <div class="dl-text">
                         <small>Télécharger pour</small>

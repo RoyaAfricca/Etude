@@ -64,6 +64,10 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void refreshData() {
+    loadData();
+  }
+
   // ── Center Config ──
   Future<void> saveAppMode(bool isCenter) async {
     await _configService.setMode(isCenter);
@@ -83,6 +87,14 @@ class AppProvider extends ChangeNotifier {
     } else if (logoBase64 == '') {
       await _configService.deleteCenterLogo();
     }
+    
+    if (_cloudSyncEnabled) {
+      await _syncService.pushCenterSettings(name, rooms, enrollmentFee);
+      for (var t in teachers) {
+        await _syncService.pushTeacher(t);
+      }
+    }
+    
     notifyListeners();
   }
 
@@ -169,14 +181,26 @@ class AppProvider extends ChangeNotifier {
   }
 
   Future<void> updateGroup(
-      String id, String name, String subject, String schedule) async {
+      String id, String name, String subject, String schedule,
+      {String? teacherId, String? roomName, String? level, String? grade}) async {
     final index = _groups.indexWhere((g) => g.id == id);
     if (index == -1) return;
+    
     _groups[index].name = name;
     _groups[index].subject = subject;
     _groups[index].schedule = schedule;
+    _groups[index].teacherId = teacherId;
+    _groups[index].roomName = roomName;
+    _groups[index].level = level;
+    _groups[index].grade = grade;
+    
     final box = Hive.box<Group>('groups');
     await box.put(id, _groups[index]);
+    
+    if (_cloudSyncEnabled) {
+      _syncService.pushGroup(_groups[index]);
+    }
+    
     notifyListeners();
   }
 
@@ -207,6 +231,11 @@ class AppProvider extends ChangeNotifier {
     final box = Hive.box<Group>('groups');
     await box.delete(id);
     _groups.removeWhere((g) => g.id == id);
+    
+    if (_cloudSyncEnabled) {
+      _syncService.deleteGroupCloud(id);
+    }
+    
     notifyListeners();
   }
 
@@ -289,6 +318,11 @@ class AppProvider extends ChangeNotifier {
     final box = Hive.box<Student>('students');
     await box.delete(id);
     _students.removeWhere((s) => s.id == id);
+    
+    if (_cloudSyncEnabled) {
+      _syncService.deleteStudentCloud(id);
+    }
+    
     notifyListeners();
   }
 
@@ -374,6 +408,11 @@ class AppProvider extends ChangeNotifier {
     }
     final box = Hive.box<Student>('students');
     await box.put(studentId, _students[index]);
+    
+    if (_cloudSyncEnabled) {
+      _syncService.pushStudent(_students[index]);
+    }
+    
     notifyListeners();
   }
 

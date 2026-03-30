@@ -14,6 +14,8 @@ class GroupSessionsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
+    final group = provider.groups.firstWhere((g) => g.id == groupId,
+        orElse: () => provider.groups.first);
     final students = provider.getStudentsForGroup(groupId);
 
     // Aggregate attendances by Day to define "Sessions"
@@ -42,7 +44,7 @@ class GroupSessionsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text("État détaillé par séance"),
+        title: Text("Séances: ${group.subject} - ${group.name}"),
         backgroundColor: AppTheme.surface,
         foregroundColor: AppTheme.textPrimary,
         elevation: 0,

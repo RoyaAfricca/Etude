@@ -12,6 +12,7 @@ import 'group_sessions_screen.dart';
 import 'take_attendance_screen.dart';
 import '../services/pdf_service.dart';
 import '../models/schedule_slot.dart';
+import '../widgets/group_edit_dialog.dart';
 import '../l10n/app_localizations.dart';
 
 class GroupDetailScreen extends StatefulWidget {
@@ -40,7 +41,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            title: Text(group.name),
+            title: Text('${group.subject} - ${group.name}'),
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new, size: 20),
               onPressed: () => Navigator.pop(context),
@@ -58,6 +59,20 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                       color: AppTheme.primary, size: 22),
                   tooltip: 'Marquer présence (tout le groupe)',
                   onPressed: () => _confirmGroupAttendance(context, provider),
+                ),
+              ),
+              // Edit group button
+              Container(
+                margin: const EdgeInsets.only(right: 16),
+                decoration: BoxDecoration(
+                  color: AppTheme.accent.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.edit_rounded,
+                      color: AppTheme.accent, size: 22),
+                  tooltip: 'Modifier le groupe',
+                  onPressed: () => GroupEditDialog.show(context, group),
                 ),
               ),
             ],
