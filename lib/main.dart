@@ -14,6 +14,7 @@ import 'package:path/path.dart' as p;
 import 'models/student_model.dart';
 import 'models/group_model.dart';
 import 'models/payment_model.dart';
+import 'models/schedule_slot.dart'; // Ajouté pour ScheduleSlotAdapter
 import 'providers/app_provider.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/auth_screen.dart';
@@ -66,6 +67,7 @@ void main() async {
   Hive.registerAdapter(StudentAdapter());
   Hive.registerAdapter(GroupAdapter());
   Hive.registerAdapter(PaymentAdapter());
+  Hive.registerAdapter(ScheduleSlotAdapter()); // Ajouté pour empêcher le plantage
 
   // Open boxes
   await Hive.openBox<Student>('students');

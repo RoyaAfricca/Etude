@@ -284,11 +284,20 @@ class GroupsScreen extends StatelessWidget {
           final grades = selectedLevel != null ? gradesMap[selectedLevel]! : [];
           final subjects = selectedLevel != null ? subjectsMap[selectedLevel]! : [];
 
+          // Deduplicate teacher items to avoid "Duplicate items" crash
+          final teacherItems = <String, String>{};
+          for (var t in teachers) {
+            if (t.id.isNotEmpty) teacherItems[t.id] = t.name;
+          }
+
+          // Deduplicate room items
+          final roomItems = rooms.where((r) => r.isNotEmpty).toSet().toList();
+
           bool canCreate = nameCtl.text.trim().isNotEmpty &&
               selectedLevel != null &&
               selectedGrade != null &&
-              selectedSubject != null &&
-              selectedTeacherId != null;
+              selectedSubject != null;
+
 
           return Padding(
             padding: EdgeInsets.only(
@@ -359,7 +368,10 @@ class GroupsScreen extends StatelessWidget {
                     dropdownColor: AppTheme.surface,
                     style: const TextStyle(color: AppTheme.textPrimary),
                     decoration: const InputDecoration(labelText: 'Enseignant', prefixIcon: Icon(Icons.person_outline, color: AppTheme.primary)),
-                    items: teachers.map((t) => DropdownMenuItem<String?>(value: t.id, child: Text(t.name, style: const TextStyle(color: AppTheme.textPrimary)))).toList(),
+                    items: [
+                      const DropdownMenuItem<String?>(value: null, child: Text('— Aucun —')),
+                      ...teacherItems.entries.map((e) => DropdownMenuItem<String?>(value: e.key, child: Text(e.value, style: const TextStyle(color: AppTheme.textPrimary)))),
+                    ],
                     onChanged: (v) => setSt(() => selectedTeacherId = v),
                   ),
                   if (provider.showRooms) ...[
@@ -371,7 +383,7 @@ class GroupsScreen extends StatelessWidget {
                       decoration: const InputDecoration(labelText: 'Salle', prefixIcon: Icon(Icons.meeting_room_outlined, color: AppTheme.primary)),
                       items: [
                         const DropdownMenuItem<String?>(value: null, child: Text('— Aucune —')),
-                        ...rooms.map((r) => DropdownMenuItem<String?>(value: r, child: Text(r, style: const TextStyle(color: AppTheme.textPrimary)))),
+                        ...roomItems.map((r) => DropdownMenuItem<String?>(value: r, child: Text(r, style: const TextStyle(color: AppTheme.textPrimary)))),
                       ],
                       onChanged: (v) => setSt(() => selectedRoom = v),
                     ),
