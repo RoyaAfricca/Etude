@@ -10,6 +10,11 @@
     if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
       location.replace('https:' + location.href.substring(location.protocol.length));
     }
+    if (window.self !== window.top) {
+      document.addEventListener('DOMContentLoaded', () => {
+        document.body.classList.add('iframe-mode');
+      });
+    }
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
@@ -25,6 +30,14 @@
       padding: 0;
       margin: 0;
       overflow: hidden;
+    }
+
+    body.iframe-mode .phone {
+      width: 100%;
+      height: 100%;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
     }
 
     /* ───── Phone Frame ───── */
