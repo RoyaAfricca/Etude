@@ -1,46 +1,308 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
-  <base href="/Etude/">
-
-  <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
-
-  <!-- iOS meta tags & icons -->
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="etude_app">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
-
-  <title>etude_app</title>
-  <link rel="manifest" href="manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Étude - Gestion Intelligente pour Centres & Professeurs</title>
+    <meta name="description" content="Étude : L'application ultime pour gérer vos élèves, paiements biométriques et WhatsApp automatique en Tunisie. Disponible sur Android et Windows.">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
 
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
-  <script src="flutter_bootstrap.js" async></script>
+    <!-- Animated Particle Canvas -->
+    <canvas id="particles-canvas"></canvas>
+
+    <div class="blob-bg"></div>
+    <div class="blob-bg blob-2"></div>
+    <div class="blob-bg blob-3"></div>
+
+    <nav class="navbar glass">
+        <div class="container nav-content">
+            <div class="logo">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <span>Étude</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#features">Nouveautés</a></li>
+                <li><a href="#demo">Démo Live</a></li>
+                <li><a href="#contact">Assistance</a></li>
+                <li><a href="#download" class="btn-primary-sm"><i class="fa-solid fa-download"></i> Installer</a></li>
+            </ul>
+            <button class="hamburger" id="hamburger" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu glass" id="mobileMenu">
+        <a href="#features" class="mobile-link">Nouveautés</a>
+        <a href="#demo" class="mobile-link">Démo Live</a>
+        <a href="#contact" class="mobile-link">Assistance</a>
+        <a href="#download" class="mobile-link mobile-dl"><i class="fa-solid fa-download"></i> Installer</a>
+    </div>
+
+    <!-- Hero -->
+    <header class="hero container">
+        <div class="hero-text fade-in">
+            <div class="hero-badge">
+                <span class="badge-dot"></span>
+                Nouvelle Version v1.2.0 - Biométrie & WhatsApp +216
+            </div>
+            <h1>Gérez vos élèves avec <span id="typing-text"></span><span class="cursor">|</span></h1>
+            <p>La solution complète en Tunisie pour planifier vos séances, valider vos paiements par empreinte et automatiser vos rappels WhatsApp.</p>
+            <div class="hero-buttons">
+                <a href="#download" class="btn-primary">
+                    <i class="fa-brands fa-android"></i> APK Android 64
+                </a>
+                <a href="#demo" class="btn-secondary">Voir la démo <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+            <div class="platform-badges">
+                <div class="platform-badge">
+                    <i class="fa-brands fa-android"></i>
+                    <span>Android 64-bit</span>
+                </div>
+                <div class="platform-badge">
+                    <i class="fa-brands fa-windows"></i>
+                    <span>Windows (MSIX)</span>
+                </div>
+                <div class="platform-badge">
+                    <i class="fa-solid fa-fingerprint"></i>
+                    <span>Biométrie</span>
+                </div>
+            </div>
+        </div>
+        <div class="hero-visual fade-in delay-1">
+            <div class="phone-mockup">
+                <div class="phone-screen">
+                    <div class="phone-statusbar">
+                        <span>1:18</span>
+                        <div class="statusbar-icons">
+                            <i class="fa-solid fa-signal"></i>
+                            <i class="fa-solid fa-wifi"></i>
+                            <i class="fa-solid fa-battery-full"></i>
+                        </div>
+                    </div>
+                    <!-- Frame pour la démo interactive -->
+                    <div class="phone-content">
+                        <iframe src="demo_app.html" style="width: 100%; height: 100%; border: none;" scrolling="no"></iframe>
+                    </div>
+                </div>
+                <div class="phone-glow"></div>
+            </div>
+            <!-- Floating Badges -->
+            <div class="float-badge float-badge-1 fly-in">
+                <i class="fa-solid fa-bolt"></i> WhatsApp +216 auto
+            </div>
+            <div class="float-badge float-badge-2 fly-in delay-1">
+                <i class="fa-solid fa-fingerprint"></i> Paiement Empreinte/PIN
+            </div>
+            <div class="float-badge float-badge-3 fly-in delay-2">
+                <i class="fa-solid fa-shield-halved"></i> 100% Hors-ligne
+            </div>
+        </div>
+    </header>
+
+    <!-- Stats Section -->
+    <section id="stats" class="section stats-section">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-counter fade-in">
+                    <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+                    <div class="counter" data-target="500">0</div>
+                    <div class="counter-plus">+</div>
+                    <div class="counter-label">Élèves gérés</div>
+                </div>
+                <div class="stat-counter fade-in delay-1">
+                    <div class="stat-icon"><i class="fa-solid fa-calendar-check"></i></div>
+                    <div class="counter" data-target="1500">0</div>
+                    <div class="counter-plus">+</div>
+                    <div class="counter-label">Séances validées</div>
+                </div>
+                <div class="stat-counter fade-in delay-2">
+                    <div class="stat-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                    <div class="counter" data-target="100">0</div>
+                    <div class="counter-plus">%</div>
+                    <div class="counter-label">Données locales</div>
+                </div>
+                <div class="stat-counter fade-in delay-3">
+                    <div class="stat-icon"><i class="fa-solid fa-mobile-button"></i></div>
+                    <div class="counter-plus">8</div>
+                    <div class="counter-label">Chiffres (Format TN)</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features" class="container section">
+        <div class="section-header fade-in">
+            <div class="section-tag">Nouveautés v1.2</div>
+            <h2 class="section-title">Une expérience moderne</h2>
+            <p class="section-subtitle">Nous avons intégré les dernières technologies pour faciliter votre gestion au quotidien.</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card glass tilt-effect fade-in">
+                <div class="icon-wrapper icon-purple">
+                    <i class="fa-solid fa-fingerprint"></i>
+                </div>
+                <h3>Paiement Biométrique</h3>
+                <p>Validez les paiements par Empreinte, PIN ou Face ID. Plus besoin de saisir le mot de passe manuellement.</p>
+                <div class="feature-tag">Sécutité native</div>
+            </div>
+            <div class="feature-card glass tilt-effect fade-in delay-1">
+                <div class="icon-wrapper icon-blue">
+                    <i class="fa-brands fa-whatsapp"></i>
+                </div>
+                <h3>WhatsApp Optimizé</h3>
+                <p>Envoi automatique des rappels avec l'indicatif +216. Formatage intelligent des numéros tunisiens.</p>
+                <div class="feature-tag">Communication</div>
+            </div>
+            <div class="feature-card glass tilt-effect fade-in delay-2">
+                <div class="icon-wrapper icon-green">
+                    <i class="fa-solid fa-microchip"></i>
+                </div>
+                <h3>APK 64-bit Uniquement</h3>
+                <p>Version optimisée pour les smartphones récents (arm64-v8a) pour une fluidité maximale et zéro lag.</p>
+                <div class="feature-tag">Performance</div>
+            </div>
+            <div class="feature-card glass tilt-effect fade-in">
+                <div class="icon-wrapper icon-orange">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <h3>Multi-Groupes</h3>
+                <p>Un élève peut être inscrit dans plusieurs matières ou groupes simultanément avec des suivis séparés.</p>
+                <div class="feature-tag">Flexibilité</div>
+            </div>
+            <div class="feature-card glass tilt-effect fade-in delay-1">
+                <div class="icon-wrapper icon-pink">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <h3>Sécurité Totale</h3>
+                <p>Gestion par PIN sur Windows et Biométrie sur Android. Vos données financières sont protégées.</p>
+                <div class="feature-tag">Protection</div>
+            </div>
+            <div class="feature-card glass tilt-effect fade-in delay-2">
+                <div class="icon-wrapper icon-cyan">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                </div>
+                <h3>Sync Cloud (Option)</h3>
+                <p>Synchronisation sécurisée entre votre PC et votre Mobile via un déploiement cloud privé.</p>
+                <div class="feature-tag">Connecté</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Interactive Section -->
+    <section id="demo" class="container section">
+        <div class="section-header fade-in">
+            <div class="section-tag">Aperçu</div>
+            <h2 class="section-title">Essayez l'application</h2>
+            <p class="section-subtitle">Testez l'interface directement dans cette fenêtre interactive.</p>
+        </div>
+        <div class="demo-visual fade-in">
+            <div class="demo-mockup-wrap">
+                <div class="iframe-container">
+                    <iframe src="demo_app.html" class="demo-iframe"></iframe>
+                </div>
+                <div class="demo-badge-live">DÉMO LIVE</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact & Assistance -->
+    <section id="contact" class="container section">
+        <div class="contact-wrapper glass fade-in">
+            <div class="contact-left">
+                <div class="section-tag" style="margin-bottom:20px;">Assistance Technique</div>
+                <h2>Besoin d'aide pour installer ?</h2>
+                <p>Le développeur est disponible pour vous assister dans la configuration initiale et l'import de vos données.</p>
+                <div class="contact-features">
+                    <div class="contact-feature">
+                        <div class="cf-icon"><i class="fa-solid fa-headset"></i></div>
+                        <div>
+                            <strong>Support Développeur</strong>
+                            <span>Assistance directe par WhatsApp</span>
+                        </div>
+                    </div>
+                    <div class="contact-feature">
+                        <div class="cf-icon"><i class="fa-solid fa-wrench"></i></div>
+                        <div>
+                            <strong>Installation assistée</strong>
+                            <span>Dépannage Android & Windows</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="contact-right">
+                <div class="whatsapp-card">
+                    <div class="wa-glow"></div>
+                    <div class="wa-icon-wrap">
+                        <i class="fa-brands fa-whatsapp"></i>
+                    </div>
+                    <h3>Contact WhatsApp</h3>
+                    <p>Contactez le développeur pour une assistance immédiate ou une licence.</p>
+                    <a href="https://wa.me/21629403406" target="_blank" class="btn-whatsapp">
+                        <i class="fa-brands fa-whatsapp"></i>
+                        Ouvrir WhatsApp
+                    </a>
+                    <div class="wa-number">
+                        <i class="fa-solid fa-phone"></i>
+                        +216 29 40 34 06
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download Section -->
+    <section id="download" class="container section text-center fade-in">
+        <div class="download-wrapper">
+            <div class="section-tag" style="margin:0 auto 24px;">Installation</div>
+            <h2>Prêt à optimiser vos cours ?</h2>
+            <p>Téléchargez la version v1.2.0 optimisée pour la Tunisie.</p>
+            <div class="download-buttons">
+                <a href="etude_app_arm64.apk" download class="btn-download pulse-btn">
+                    <div class="dl-icon"><i class="fa-brands fa-android"></i></div>
+                    <div class="dl-text">
+                        <small>Android (Release 64)</small>
+                        <strong>etude_app_arm64.apk</strong>
+                    </div>
+                </a>
+                <a href="application_etude_windows.msix" download class="btn-download-outline">
+                    <div class="dl-icon"><i class="fa-brands fa-windows"></i></div>
+                    <div class="dl-text">
+                        <small>Windows (Installer)</small>
+                        <strong>etude_windows.msix</strong>
+                    </div>
+                </a>
+            </div>
+            <p class="download-note">
+                <i class="fa-solid fa-circle-info"></i>
+                Indicate de confiance : L'application n'utilise aucune donnée personnelle externe.
+            </p>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container text-center">
+            <div class="logo" style="justify-content:center; margin-bottom:16px;">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <span>Étude</span>
+            </div>
+            <p class="footer-links">
+                <a href="#features">Nouveautés</a>
+                <span>·</span>
+                <a href="#contact">Contact</a>
+                <span>·</span>
+                <a href="#download">Télécharger</a>
+            </p>
+            <p class="footer-copy">&copy; 2025-2026 Application Étude &mdash; RoyaAfricca</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
 </body>
 </html>
