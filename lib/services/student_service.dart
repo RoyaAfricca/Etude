@@ -33,16 +33,31 @@ class GroupStats {
 
 class StudentService {
   static StudentStatus computeStatus(Student student) {
-    if (student.sessionsSincePayment == 0) {
-      return StudentStatus.upToDate;
-    } else if (student.sessionsSincePayment < 4) {
-      return StudentStatus.inProgress;
-    } else if (student.sessionsSincePayment == 4) {
-      return StudentStatus.dueSoon;
-    } else {
-      return StudentStatus.overdue;
+    switch (student.paymentMode) {
+      case kPaymentModeMonthly:
+        // Abonnement mensuel : à jour si l'abonnement est actif
+        return student.isMonthlyActive
+            ? StudentStatus.upToDate
+            : StudentStatus.overdue;
+
+      case kPaymentModePerSession:
+        // Par séance : doit payer après chaque séance
+        if (student.sessionsSincePayment == 0) return StudentStatus.upToDate;
+        return StudentStatus.overdue;
+
+      default: // kPaymentModeCycle (4 séances)
+        if (student.sessionsSincePayment == 0) {
+          return StudentStatus.upToDate;
+        } else if (student.sessionsSincePayment < 4) {
+          return StudentStatus.inProgress;
+        } else if (student.sessionsSincePayment == 4) {
+          return StudentStatus.dueSoon;
+        } else {
+          return StudentStatus.overdue;
+        }
     }
   }
+
 
   static GroupStats getGroupStats(Group group, List<Student> students) {
     final groupStudents =

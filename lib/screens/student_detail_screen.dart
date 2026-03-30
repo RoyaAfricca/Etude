@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/app_provider.dart';
 import '../models/student_status.dart';
+import '../models/student_model.dart';
 import '../services/student_service.dart';
 import '../services/pdf_service.dart';
 import '../theme/app_theme.dart';
@@ -12,6 +13,7 @@ import 'student_state_screen.dart';
 import '../utils/auth_helper.dart';
 import '../l10n/app_localizations.dart';
 import '../widgets/group_notify_dialog.dart';
+
 
 class StudentDetailScreen extends StatelessWidget {
   final String studentId;
@@ -242,22 +244,93 @@ class StudentDetailScreen extends StatelessWidget {
                               fontWeight: FontWeight.w700,
                             ),
                           ),
+                          const Spacer(),
+                          // Badge du mode de paiement
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: _payModeColor(student.paymentMode).withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(_payModeIcon(student.paymentMode), size: 12,
+                                    color: _payModeColor(student.paymentMode)),
+                                const SizedBox(width: 4),
+                                Text(
+                                  student.paymentModeLabel,
+                                  style: TextStyle(
+                                    color: _payModeColor(student.paymentMode),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      SessionCounterWidget(
-                          current: student.sessionsSincePayment),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Séances restantes avant paiement: ${student.sessionsRemaining}',
-                        style: TextStyle(
-                          color: AppTheme.textSecondary,
-                          fontSize: 13,
+                      if (student.paymentMode == kPaymentModeMonthly) ...[
+                        // Mode mensuel : afficher la date d'expiration
+                        if (student.isMonthlyActive)
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppTheme.success.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: AppTheme.success.withOpacity(0.3)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.verified_rounded, color: AppTheme.success, size: 18),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Abonnement actif jusqu\'au ${_formatDateShort(student.monthlyExpiry!)}',
+                                  style: const TextStyle(color: AppTheme.success, fontSize: 13, fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppTheme.danger.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: AppTheme.danger.withOpacity(0.3)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.cancel_rounded, color: AppTheme.danger, size: 18),
+                                const SizedBox(width: 8),
+                                const Text('Abonnement expiré', style: TextStyle(color: AppTheme.danger, fontSize: 13, fontWeight: FontWeight.w600)),
+                              ],
+                            ),
+                          ),
+                      ] else ...[
+                        SessionCounterWidget(
+                            current: student.sessionsSincePayment,
+                            total: student.paymentMode == kPaymentModePerSession ? 1 : 4),
+
+                        const SizedBox(height: 8),
+                        Text(
+                          student.paymentMode == kPaymentModePerSession
+                              ? (student.sessionsSincePayment > 0
+                                  ? '⚠️ ${student.sessionsSincePayment} séance(s) à payer'
+                                  : '✅ Séance payée')
+                              : 'Séances restantes avant paiement: ${student.sessionsRemaining}',
+                          style: TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 13,
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
+
                 const SizedBox(height: 16),
 
                 // ── Action Buttons ──
@@ -290,9 +363,10 @@ class StudentDetailScreen extends StatelessWidget {
                         label: 'Marquer payé',
                         color: AppTheme.success,
                         onTap: () => _showPaymentDialog(
-                            context, provider, student.pricePerCycle),
+                            context, provider, student),
                       ),
                     ),
+
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -775,11 +849,25 @@ class StudentDetailScreen extends StatelessWidget {
   }
 
   void _showPaymentDialog(
-      BuildContext context, AppProvider provider, double defaultPrice) {
+      BuildContext context, AppProvider provider, Student student) {
+    final defaultPrice = student.effectivePrice;
     final amountCtl =
         TextEditingController(text: defaultPrice.toStringAsFixed(0));
     bool isEnrollment = false;
+    int monthsDuration = 1;
     final enrollmentFee = provider.enrollmentFee;
+
+    // Description de l'effet du paiement selon le mode
+    String paymentEffect(String mode) {
+      switch (mode) {
+        case kPaymentModeMonthly:
+          return 'L\'abonnement sera validé pour $monthsDuration mois.';
+        case kPaymentModePerSession:
+          return 'La séance en cours sera marquée comme payée.';
+        default:
+          return 'Le compteur de séances sera déduit de 4 séances.';
+      }
+    }
 
     showDialog(
       context: context,
@@ -802,24 +890,48 @@ class StudentDetailScreen extends StatelessWidget {
                       Icon(Icons.payments_outlined, color: AppTheme.success),
                 ),
               ),
-              const SizedBox(height: 12),
-              SwitchListTile(
-                title: const Text('Frais d\'inscription',
-                    style: TextStyle(color: AppTheme.textPrimary, fontSize: 13)),
-                value: isEnrollment,
-                activeColor: AppTheme.success,
-                contentPadding: EdgeInsets.zero,
-                onChanged: (v) {
-                  setSt(() {
-                    isEnrollment = v;
-                    if (isEnrollment) {
-                      amountCtl.text = enrollmentFee.toStringAsFixed(0);
-                    } else {
-                      amountCtl.text = defaultPrice.toStringAsFixed(0);
-                    }
-                  });
-                },
-              ),
+              // Choix du nombre de mois pour le mode mensuel
+              if (student.paymentMode == kPaymentModeMonthly && !isEnrollment) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    const Text('Durée :', style: TextStyle(color: AppTheme.textSecondary)),
+                    const SizedBox(width: 12),
+                    ...List.generate(3, (i) => i + 1).map((m) => Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text('$m mois'),
+                        selected: monthsDuration == m,
+                        selectedColor: AppTheme.primary.withOpacity(0.2),
+                        onSelected: (_) => setSt(() {
+                          monthsDuration = m;
+                          amountCtl.text = (defaultPrice * m).toStringAsFixed(0);
+                        }),
+                      ),
+                    )),
+                  ],
+                ),
+              ],
+              if (enrollmentFee > 0) ...[
+                const SizedBox(height: 12),
+                SwitchListTile(
+                  title: const Text('Frais d\'inscription',
+                      style: TextStyle(color: AppTheme.textPrimary, fontSize: 13)),
+                  value: isEnrollment,
+                  activeColor: AppTheme.success,
+                  contentPadding: EdgeInsets.zero,
+                  onChanged: (v) {
+                    setSt(() {
+                      isEnrollment = v;
+                      if (isEnrollment) {
+                        amountCtl.text = enrollmentFee.toStringAsFixed(0);
+                      } else {
+                        amountCtl.text = defaultPrice.toStringAsFixed(0);
+                      }
+                    });
+                  },
+                ),
+              ],
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -843,8 +955,8 @@ class StudentDetailScreen extends StatelessWidget {
                       child: Text(
                         isEnrollment
                             ? 'Le paiement sera enregistré comme frais d\'inscription.'
-                            : 'Le compteur de séances sera déduit de 4 séances.',
-                        style: TextStyle(
+                            : paymentEffect(student.paymentMode),
+                        style: const TextStyle(
                           color: AppTheme.textSecondary,
                           fontSize: 12,
                         ),
@@ -869,8 +981,9 @@ class StudentDetailScreen extends StatelessWidget {
 
                 if (authenticated) {
                   final amount = double.tryParse(amountCtl.text) ?? defaultPrice;
-                  provider.markAsPaid(studentId, amount,
-                      isEnrollment: isEnrollment);
+                  provider.markAsPaid(student.id, amount,
+                      isEnrollment: isEnrollment,
+                      monthsDuration: monthsDuration);
                   Navigator.pop(ctx);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -909,6 +1022,30 @@ class StudentDetailScreen extends StatelessWidget {
       ),
     );
   }
+
+  // Helpers pour le mode de paiement
+  Color _payModeColor(String mode) {
+    switch (mode) {
+      case kPaymentModeMonthly:    return AppTheme.accent;
+      case kPaymentModePerSession: return AppTheme.orange;
+      default:                     return AppTheme.primary;
+    }
+  }
+
+  IconData _payModeIcon(String mode) {
+    switch (mode) {
+      case kPaymentModeMonthly:    return Icons.calendar_month_rounded;
+      case kPaymentModePerSession: return Icons.looks_one_rounded;
+      default:                     return Icons.repeat_rounded;
+    }
+  }
+
+  String _formatDateShort(DateTime d) {
+    const months = ['jan', 'fév', 'mars', 'avr', 'mai', 'juin', 'juil', 'août', 'sep', 'oct', 'nov', 'déc'];
+    return '${d.day} ${months[d.month - 1]} ${d.year}';
+  }
+
+
 
   void _showDeleteConfirm(BuildContext context, AppProvider provider) {
     showDialog(

@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:uuid/uuid.dart';
 
-import '../models/student_model.dart';
+import '../models/student_model.dart'; // inclut kPaymentModeCycle, etc.
+
 import '../models/group_model.dart';
 import '../models/schedule_slot.dart';
 import '../models/payment_model.dart';
@@ -326,18 +327,45 @@ class AppProvider extends ChangeNotifier {
       {double enrollmentFeeAmount = 0.0,
       String email = '',
       String originSchool = '',
-      int sessionsSincePayment = 0}) async {
+      int sessionsSincePayment = 0,
+      String paymentMode = kPaymentModeCycle,
+      double pricePerMonth = 100.0,
+      double pricePerSession = 30.0}) async {
     final student = Student(
       id: _uuid.v4(),
       name: name,
       phone: phone,
       groupId: groupId,
       pricePerCycle: price,
+      pricePerMonth: pricePerMonth,
+      pricePerSession: pricePerSession,
       email: email,
       originSchool: originSchool,
       sessionsSincePayment: sessionsSincePayment,
+      paymentMode: paymentMode,
     );
     await addStudentObj(student, enrollmentFeeAmount: enrollmentFeeAmount);
+  }
+
+  Future<void> updateStudentPaymentMode(
+      String studentId, String mode, double price) async {
+    final index = _students.indexWhere((s) => s.id == studentId);
+    if (index == -1) return;
+    _students[index].paymentMode = mode;
+    switch (mode) {
+      case kPaymentModeMonthly:
+        _students[index].pricePerMonth = price;
+        break;
+      case kPaymentModePerSession:
+        _students[index].pricePerSession = price;
+        break;
+      default:
+        _students[index].pricePerCycle = price;
+    }
+    final box = Hive.box<Student>('students');
+    await box.put(studentId, _students[index]);
+    if (_cloudSyncEnabled) _syncService.pushStudent(_students[index]);
+    notifyListeners();
   }
 
   Future<void> addStudentObj(Student student, {double enrollmentFeeAmount = 0.0}) async {
@@ -457,26 +485,56 @@ class AppProvider extends ChangeNotifier {
   }
 
   // ── Payments ──
-  Future<void> markAsPaid(String studentId, double amount, {bool isEnrollment = false}) async {
+  Future<void> markAsPaid(String studentId, double amount,
+      {bool isEnrollment = false, int? monthsDuration}) async {
     final index = _students.indexWhere((s) => s.id == studentId);
     if (index == -1) return;
-    final payment = Payment(
+
+    final student = _students[index];
+    int sessionsCount;
+
+    if (isEnrollment) {
+      sessionsCount = 0;
+    } else {
+      switch (student.paymentMode) {
+        case kPaymentModeMonthly:
+          // Abonnement mensuel : prolonger ou démarrer l'expiration
+          final months = monthsDuration ?? 1;
+          sessionsCount = months * 30; // convention: 30 jours = 1 mois
+          final base = student.monthlyExpiry != null &&
+                  student.monthlyExpiry!.isAfter(DateTime.now())
+              ? student.monthlyExpiry!
+              : DateTime.now();
+          student.monthlyExpiry =
+              DateTime(base.year, base.month + months, base.day);
+          student.sessionsSincePayment = 0;
+          break;
+        case kPaymentModePerSession:
+          // Par séance : on remet le compteur à 0 (1 séance payée)
+          sessionsCount = 1;
+          student.sessionsSincePayment =
+              (student.sessionsSincePayment - 1).clamp(0, 9999);
+          break;
+        default: // cycle de 4 séances
+          sessionsCount = 4;
+          student.sessionsSincePayment -= 4;
+      }
+    }
+
+    student.payments.add(Payment(
       id: _uuid.v4(),
       date: DateTime.now(),
       amount: amount,
-      sessionsCount: isEnrollment ? 0 : 4,
-    );
-    _students[index].payments.add(payment);
-    if (!isEnrollment) {
-      _students[index].sessionsSincePayment -= 4; // On déduit 4 de la dette
-    }
+      sessionsCount: sessionsCount,
+    ));
+
     final box = Hive.box<Student>('students');
-    await box.put(studentId, _students[index]);
-    
+    await box.put(studentId, student);
+
     if (_cloudSyncEnabled) {
-      _syncService.pushStudent(_students[index]);
+      _syncService.pushStudent(student);
     }
-    
+
     notifyListeners();
   }
 

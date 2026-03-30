@@ -27,13 +27,18 @@ class StudentAdapter extends TypeAdapter<Student> {
       groupId: fields[7] as String,
       email: fields[8] as String,
       originSchool: fields[9] as String,
+      pricePerMonth: fields[10] == null ? 100.0 : (fields[10] as double),
+      pricePerSession: fields[11] == null ? 30.0 : (fields[11] as double),
+      monthlyExpiry: fields[12] as DateTime?,
+      // Rétrocompatibilité : les anciens élèves n'ont pas ce champ → 'cycle'
+      paymentMode: fields[13] == null ? kPaymentModeCycle : (fields[13] as String),
     );
   }
 
   @override
   void write(BinaryWriter writer, Student obj) {
     writer
-      ..writeByte(10)
+      ..writeByte(14) // nombre total de champs
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -53,7 +58,15 @@ class StudentAdapter extends TypeAdapter<Student> {
       ..writeByte(8)
       ..write(obj.email)
       ..writeByte(9)
-      ..write(obj.originSchool);
+      ..write(obj.originSchool)
+      ..writeByte(10)
+      ..write(obj.pricePerMonth)
+      ..writeByte(11)
+      ..write(obj.pricePerSession)
+      ..writeByte(12)
+      ..write(obj.monthlyExpiry)
+      ..writeByte(13)
+      ..write(obj.paymentMode);
   }
 
   @override
@@ -66,3 +79,4 @@ class StudentAdapter extends TypeAdapter<Student> {
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }
+

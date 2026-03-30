@@ -6,6 +6,7 @@ import '../models/student_status.dart';
 import '../theme/app_theme.dart';
 import '../widgets/group_stats_card.dart';
 import '../widgets/student_list_tile.dart';
+import '../models/student_model.dart';
 import 'student_detail_screen.dart';
 import 'group_state_screen.dart';
 import 'group_sessions_screen.dart';
@@ -15,6 +16,7 @@ import '../models/schedule_slot.dart';
 import '../widgets/group_edit_dialog.dart';
 import '../widgets/group_notify_dialog.dart';
 import '../l10n/app_localizations.dart';
+
 
 class GroupDetailScreen extends StatefulWidget {
   final String groupId;
@@ -503,6 +505,23 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
     final enrollmentFee = provider.enrollmentFee;
     bool chargeEnrollmentFee = enrollmentFee > 0;
     bool feeAutoExempted = false;
+    String selectedPaymentMode = kPaymentModeCycle;
+
+    // Labels dynamiques selon le mode
+    String priceLabelFor(String mode) {
+      switch (mode) {
+        case kPaymentModeMonthly:    return 'Prix mensuel';
+        case kPaymentModePerSession: return 'Prix par séance';
+        default:                     return 'Prix par cycle (4 séances)';
+      }
+    }
+    String defaultPriceFor(String mode) {
+      switch (mode) {
+        case kPaymentModeMonthly:    return '200';
+        case kPaymentModePerSession: return '50';
+        default:                     return '200';
+      }
+    }
 
     showModalBottomSheet(
       context: context,
@@ -599,18 +618,66 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                       ],
                     ),
                   ),
+                const SizedBox(height: 20),
+
+                // ── Mode de paiement ──────────────────────────────────
+                const Text(
+                  'Mode de paiement',
+                  style: TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    _PayModeChip(
+                      label: '4 Séances',
+                      icon: Icons.repeat_rounded,
+                      selected: selectedPaymentMode == kPaymentModeCycle,
+                      onTap: () => setSt(() {
+                        selectedPaymentMode = kPaymentModeCycle;
+                        priceCtl.text = defaultPriceFor(kPaymentModeCycle);
+                      }),
+                    ),
+                    const SizedBox(width: 8),
+                    _PayModeChip(
+                      label: 'Mensuel',
+                      icon: Icons.calendar_month_rounded,
+                      selected: selectedPaymentMode == kPaymentModeMonthly,
+                      onTap: () => setSt(() {
+                        selectedPaymentMode = kPaymentModeMonthly;
+                        priceCtl.text = defaultPriceFor(kPaymentModeMonthly);
+                      }),
+                    ),
+                    const SizedBox(width: 8),
+                    _PayModeChip(
+                      label: 'Par séance',
+                      icon: Icons.looks_one_rounded,
+                      selected: selectedPaymentMode == kPaymentModePerSession,
+                      onTap: () => setSt(() {
+                        selectedPaymentMode = kPaymentModePerSession;
+                        priceCtl.text = defaultPriceFor(kPaymentModePerSession);
+                      }),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 12),
+
+                // ── Prix selon mode ────────────────────────────────────
                 TextField(
                   controller: priceCtl,
                   keyboardType: TextInputType.number,
                   style: const TextStyle(color: AppTheme.textPrimary),
-                  decoration: const InputDecoration(
-                    labelText: 'Prix par cycle (4 séances)',
+                  decoration: InputDecoration(
+                    labelText: priceLabelFor(selectedPaymentMode),
                     prefixIcon:
-                        Icon(Icons.payments_outlined, color: AppTheme.primary),
+                        const Icon(Icons.payments_outlined, color: AppTheme.primary),
                     suffixText: 'DT',
                   ),
                 ),
+
                 // ── Frais d'inscription (si configuré) ───────────────
                 if (enrollmentFee > 0) ...[
                   const SizedBox(height: 16),
@@ -684,11 +751,19 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                         nameCtl.text.trim(),
                         phoneCtl.text.trim(),
                         widget.groupId,
-                        price,
+                        selectedPaymentMode == kPaymentModeCycle ? price : 200,
                         enrollmentFeeAmount:
                             chargeEnrollmentFee ? enrollmentFee : 0.0,
                         email: emailCtl.text.trim(),
                         originSchool: schoolCtl.text.trim(),
+                        paymentMode: selectedPaymentMode,
+                        pricePerMonth: selectedPaymentMode == kPaymentModeMonthly
+                            ? price
+                            : 200,
+                        pricePerSession:
+                            selectedPaymentMode == kPaymentModePerSession
+                                ? price
+                                : 50,
                       );
                       Navigator.pop(ctx);
                     },
@@ -933,6 +1008,64 @@ class _FilterChip extends StatelessWidget {
                 : AppTheme.textSecondary,
             fontSize: 13,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Chip de sélection du mode de paiement
+class _PayModeChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _PayModeChip({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: selected
+                ? AppTheme.primary.withOpacity(0.15)
+                : AppTheme.surfaceLight,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: selected ? AppTheme.primary : AppTheme.cardBorder,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color: selected ? AppTheme.primary : AppTheme.textMuted,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+                  color: selected ? AppTheme.primary : AppTheme.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
         ),
       ),

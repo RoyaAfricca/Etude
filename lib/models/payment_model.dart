@@ -16,10 +16,14 @@ class Payment {
   @HiveField(3)
   int sessionsCount;
 
+  @HiveField(4)
+  String paymentType; // 'sessions' or 'month'
+
   Payment({
     required this.id,
     required this.date,
     required this.amount,
     this.sessionsCount = 4,
+    this.paymentType = 'sessions',
   });
 }

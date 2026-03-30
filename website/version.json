@@ -1,12 +1,1 @@
-{
-  "android": {
-    "version": "1.2.0",
-    "build_number": 3,
-    "url": "https://royaafricca.github.io/Etude/application_etude.apk"
-  },
-  "windows": {
-    "version": "1.2.0",
-    "build_number": 3,
-    "url": "https://royaafricca.github.io/Etude/application_etude.exe"
-  }
-}
+{"app_name":"etude_app","version":"1.2.0","build_number":"1","package_name":"etude_app"}
