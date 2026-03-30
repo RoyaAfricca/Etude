@@ -6,6 +6,7 @@ import 'dart:io';
 import '../providers/app_provider.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
+import '../services/sync_service.dart';
 
 class QrSyncScreen extends StatefulWidget {
   const QrSyncScreen({super.key});
@@ -119,7 +120,7 @@ class _QrSyncScreenState extends State<QrSyncScreen> {
         const SizedBox(height: 24),
         Directionality(
           textDirection: TextDirection.ltr,
-          child: Text(
+          child: SelectableText(
             '${l.syncKeyLabel} : ${provider.syncKey}',
             style: const TextStyle(
               fontWeight: FontWeight.bold,
@@ -128,8 +129,67 @@ class _QrSyncScreenState extends State<QrSyncScreen> {
             ),
           ),
         ),
+        const SizedBox(height: 32),
+        if (provider.cloudSyncEnabled) ...[
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.sync_rounded),
+              label: const Text('Synchroniser tout vers le Cloud'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () async {
+                final success = await _showConfirmSync(context);
+                if (success) {
+                   // ignore: use_build_context_synchronously
+                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⏳ Synchronisation en cours...')));
+                   await SyncService().syncAll(provider);
+                   // ignore: use_build_context_synchronously
+                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Données envoyées !'), backgroundColor: AppTheme.success));
+                }
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.send_to_mobile_rounded),
+              label: const Text('Tester le lien avec le téléphone'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.orange,
+                side: const BorderSide(color: AppTheme.orange),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () async {
+                await SyncService().pushRemoteMessage('sms', '0000', 'Test de connexion Étude PC -> Android RÉUSSI !');
+                // ignore: use_build_context_synchronously
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('📩 Test envoyé au téléphone !'), backgroundColor: AppTheme.orange));
+              },
+            ),
+          ),
+        ],
       ],
     );
+  }
+
+  Future<bool> _showConfirmSync(BuildContext context) async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Synchronisation complète'),
+        content: const Text('Cela va envoyer TOUTES vos données locales vers le cloud. Les données sur le cloud pour ce centre seront mises à jour.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Continuer')),
+        ],
+      ),
+    ) ?? false;
   }
 
   Widget _buildMobileView(AppProvider provider, AppLocalizations l) {

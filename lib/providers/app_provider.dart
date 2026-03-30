@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -11,6 +12,8 @@ import '../services/student_service.dart';
 import '../services/center_service.dart';
 import '../l10n/app_localizations.dart';
 import '../services/sync_service.dart';
+import '../services/notification_service.dart';
+import 'dart:async';
 
 class AppProvider extends ChangeNotifier {
   List<Group> _groups = [];
@@ -28,6 +31,7 @@ class AppProvider extends ChangeNotifier {
 
   bool get cloudSyncEnabled => _cloudSyncEnabled;
   bool get isHolidayMode => _isHolidayMode;
+  bool get isSyncing => _cloudSyncEnabled && _syncService.isSyncing;
   String get syncKey => _syncService.getSyncKey();
 
   List<Group> get groups => _groups;
@@ -45,6 +49,13 @@ class AppProvider extends ChangeNotifier {
   bool get isArabic => _language == 'ar';
   TextDirection get textDirection => _language == 'ar' ? TextDirection.rtl : TextDirection.ltr;
 
+  // ── Mode-specific UI visibility ──
+  // Show rooms if Center mode OR on PC (as requested: "ne touche pas version pc")
+  bool get showRooms => _isCenterMode || Platform.isWindows;
+  
+  // Show sync only on PC OR if user enabled it in Android onboarding
+  bool get isSyncFeatureAvailable => Platform.isWindows || _configService.isSyncVisible;
+
   void toggleRevenue() {
     _showRevenue = !_showRevenue;
     notifyListeners();
@@ -60,6 +71,16 @@ class AppProvider extends ChangeNotifier {
     _isCenterMode = _configService.isCenterMode;
     _language = _langService.language;
     _isHolidayMode = Hive.box('settings').get('is_holiday_mode', defaultValue: false) as bool;
+    
+    // Resume sync if it was previously enabled
+    final settingsBox = Hive.box('settings');
+    _cloudSyncEnabled = settingsBox.get('cloud_sync_enabled', defaultValue: false) as bool;
+    if (_cloudSyncEnabled) {
+      // Re-init sync and listener
+      _syncService.initSync(this).then((_) {
+        _initRemoteMessagingListener();
+      });
+    }
 
     notifyListeners();
   }
@@ -104,16 +125,59 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setSyncVisibility(bool visible) async {
+    await _configService.setSyncVisibility(visible);
+    notifyListeners();
+  }
+
   Future<void> toggleCloudSync(bool enabled) async {
     _cloudSyncEnabled = enabled;
+    final settingsBox = Hive.box('settings');
+    await settingsBox.put('cloud_sync_enabled', enabled);
+    
     if (enabled) {
       await _syncService.initSync(this);
+      _initRemoteMessagingListener();
       // Pousser les données initiales vers le cloud lors de la première activation
-      await _syncService.syncAll(this);
+      // await _syncService.syncAll(this); // Disabled by default to avoid overwrite loops if not first time
     } else {
       _syncService.stopSync();
+      _remoteMsgSub?.cancel();
     }
     notifyListeners();
+  }
+
+  StreamSubscription? _remoteMsgSub;
+
+  void _initRemoteMessagingListener() {
+    if (!Platform.isAndroid || !_cloudSyncEnabled) return;
+    
+    _remoteMsgSub?.cancel();
+    _remoteMsgSub = _syncService.listenForRemoteMessages((id, type, recipient, body) async {
+      // Trigger messaging on the phone
+      bool success = false;
+      final recipients = recipient.split(',').where((r) => r.isNotEmpty).toList();
+      
+      if (recipients.isEmpty) {
+         await _syncService.deleteRemoteMessage(id);
+         return;
+      }
+
+      if (type == 'sms') {
+        success = await NotificationService.sendBulkSMS(recipients, body);
+      } else if (type == 'whatsapp') {
+        if (recipients.length == 1) {
+          success = await NotificationService.sendWhatsApp(recipients.first, body);
+        } else {
+          success = await NotificationService.sendBulkWhatsApp(recipients, body);
+        }
+      }
+      
+      if (success) {
+        // Delete message from cloud so we don't process it again
+        await _syncService.deleteRemoteMessage(id);
+      }
+    });
   }
 
   Future<void> setSyncKey(String key) async {

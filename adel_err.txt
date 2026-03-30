@@ -1,3 +1,0 @@
-../../../flutter/shell/platform/embedder/embedder.cc (2090): 'FlutterEngineInitialize' returned 'kInvalidArguments'. Not running in AOT mode but could not resolve the kernel binary.
-[ERROR:flutter/shell/platform/windows/flutter_windows_engine.cc(496)] Failed to start Flutter engine: error 2
-Failed to create view controller.

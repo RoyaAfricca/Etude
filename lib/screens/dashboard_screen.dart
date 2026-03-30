@@ -227,14 +227,16 @@ class DashboardScreen extends StatelessWidget {
                     ],
 
                     // ── Room Occupation ──
-                    _ActionCard(
-                      title: l.roomOccupation,
-                      subtitle: provider.isHolidayMode ? l.holidayMode : l.regularMode,
-                      icon: Icons.meeting_room_rounded,
-                      color: Colors.teal,
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RoomOccupationScreen())),
-                    ),
-                    const SizedBox(height: 24),
+                    if (provider.showRooms) ...[
+                      _ActionCard(
+                        title: l.roomOccupation,
+                        subtitle: provider.isHolidayMode ? l.holidayMode : l.regularMode,
+                        icon: Icons.meeting_room_rounded,
+                        color: Colors.teal,
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RoomOccupationScreen())),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
 
                     // ── Groups Overview ──
                     Row(

@@ -11,6 +11,7 @@ import '../widgets/session_counter_widget.dart';
 import 'student_state_screen.dart';
 import '../utils/auth_helper.dart';
 import '../l10n/app_localizations.dart';
+import '../widgets/group_notify_dialog.dart';
 
 class StudentDetailScreen extends StatelessWidget {
   final String studentId;
@@ -293,6 +294,32 @@ class StudentDetailScreen extends StatelessWidget {
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 12),
+                
+                // ── Message Button ──
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.send_rounded, size: 20),
+                    label: const Text(
+                      'Informer l\'élève (SMS/Message)',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.orange.withOpacity(0.15),
+                      foregroundColor: AppTheme.orange,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                        side: const BorderSide(color: AppTheme.orange, width: 1.5),
+                      ),
+                    ),
+                    onPressed: () {
+                      GroupNotifyDialog.show(context, [student], student.name);
+                    },
+                  ),
                 ),
                 const SizedBox(height: 12),
                 // Boutons d'impression PDF

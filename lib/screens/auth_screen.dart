@@ -23,7 +23,9 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   void initState() {
     super.initState();
-    _authenticate();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _authenticate();
+    });
   }
 
   Future<void> _authenticate() async {

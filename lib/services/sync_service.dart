@@ -409,4 +409,66 @@ class SyncService {
 
   /// Récupère la clé de synchronisation à afficher en QR Code
   String getSyncKey() => _syncKey ?? 'NON_INITIALISÉ';
+
+  // ── Remote Messaging Bridge (PC -> Android) ──
+
+  /// Pousse une demande de message vers Firestore (utilisé par le PC)
+  Future<void> pushRemoteMessage(String type, String recipient, String body) async {
+    if (!_isSyncing || _syncKey == null) return;
+    try {
+      await _firestore
+          .collection('centers')
+          .doc(_syncKey)
+          .collection('remote_messages')
+          .add({
+        'type': type,
+        'recipient': recipient,
+        'body': body,
+        'timestamp': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      debugPrint('Error pushing remote message: $e');
+    }
+  }
+
+  /// Écoute les demandes de messages (utilisé par l'Android)
+  StreamSubscription? listenForRemoteMessages(Function(String id, String type, String recipient, String body) onMessage) {
+    if (!_isSyncing || _syncKey == null) return null;
+    
+    return _firestore
+        .collection('centers')
+        .doc(_syncKey)
+        .collection('remote_messages')
+        .snapshots()
+        .listen((snapshot) {
+      for (var change in snapshot.docChanges) {
+        if (change.type == DocumentChangeType.added) {
+          final data = change.doc.data();
+          if (data != null) {
+            onMessage(
+              change.doc.id,
+              data['type'] ?? 'sms',
+              data['recipient'] ?? '',
+              data['body'] ?? '',
+            );
+          }
+        }
+      }
+    });
+  }
+
+  /// Supprime une demande de message après traitement
+  Future<void> deleteRemoteMessage(String messageId) async {
+    if (!_isSyncing || _syncKey == null) return;
+    try {
+      await _firestore
+          .collection('centers')
+          .doc(_syncKey)
+          .collection('remote_messages')
+          .doc(messageId)
+          .delete();
+    } catch (e) {
+      debugPrint('Error deleting remote message: $e');
+    }
+  }
 }

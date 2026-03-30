@@ -168,6 +168,7 @@ class CenterConfigService {
   static const String _modeSetKey = 'mode_configured';
   static const String _enrollmentFeeKey = 'enrollment_fee';
   static const String _logoKey = 'center_logo_base64'; // Logo du centre en base64
+  static const String _syncVisibleKey = 'sync_visible'; // Visibilité de la sync (onboarding)
 
   Box get _box => Hive.box(_settingsBox);
 
@@ -200,9 +201,16 @@ class CenterConfigService {
   /// Logo du centre en base64
   String? get centerLogoBase64 => _box.get(_logoKey) as String?;
 
+  bool get isSyncVisible =>
+      _box.get(_syncVisibleKey, defaultValue: true) as bool;
+
   Future<void> setMode(bool isCenter) async {
     await _box.put(_appModeKey, isCenter ? 'center' : 'teacher');
     await _box.put(_modeSetKey, true);
+  }
+
+  Future<void> setSyncVisibility(bool visible) async {
+    await _box.put(_syncVisibleKey, visible);
   }
 
   Future<void> saveCenterName(String name) async {

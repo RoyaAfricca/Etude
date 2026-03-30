@@ -31,8 +31,11 @@ class _CenterSettingsScreenState extends State<CenterSettingsScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
     final provider = context.read<AppProvider>();
+    _tabController = TabController(
+      length: provider.showRooms ? 3 : 2, 
+      vsync: this
+    );
     _centerNameCtrl.text = provider.centerName;
     _teachers = List.from(provider.teachers);
     _rooms = List.from(provider.rooms);
@@ -372,10 +375,11 @@ class _CenterSettingsScreenState extends State<CenterSettingsScreen>
           indicatorColor: AppTheme.primary,
           labelColor: AppTheme.primary,
           unselectedLabelColor: AppTheme.textMuted,
-          tabs: const [
-            Tab(icon: Icon(Icons.business), text: 'Centre'),
-            Tab(icon: Icon(Icons.group), text: 'Enseignants'),
-            Tab(icon: Icon(Icons.meeting_room), text: 'Salles'),
+          tabs: [
+            const Tab(icon: Icon(Icons.business), text: 'Centre'),
+            const Tab(icon: Icon(Icons.group), text: 'Enseignants'),
+            if (context.read<AppProvider>().showRooms)
+              const Tab(icon: Icon(Icons.meeting_room), text: 'Salles'),
           ],
         ),
       ),
@@ -384,7 +388,8 @@ class _CenterSettingsScreenState extends State<CenterSettingsScreen>
         children: [
           _buildCenterTab(),
           _buildTeachersTab(),
-          _buildRoomsTab(),
+          if (context.read<AppProvider>().showRooms)
+            _buildRoomsTab(),
         ],
       ),
     );
@@ -640,18 +645,19 @@ class _CenterSettingsScreenState extends State<CenterSettingsScreen>
           const SizedBox(height: 12),
 
           // Cloud Sync Button
-          _buildMaintenanceButton(
-            icon: Icons.cloud_sync_rounded,
-            label: 'Synchronisation Cloud',
-            description: 'Lier mon téléphone pour faire l\'appel en temps réel',
-            color: const Color(0xFF6C63FF),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const QrSyncScreen()),
-              );
-            },
-          ),
+          if (context.read<AppProvider>().isSyncFeatureAvailable)
+            _buildMaintenanceButton(
+              icon: Icons.cloud_sync_rounded,
+              label: 'Synchronisation Cloud',
+              description: 'Lier mon téléphone pour faire l\'appel en temps réel',
+              color: const Color(0xFF6C63FF),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const QrSyncScreen()),
+                );
+              },
+            ),
           const SizedBox(height: 40),
         ],
       ),

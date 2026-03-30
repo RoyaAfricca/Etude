@@ -15,7 +15,7 @@ class GroupEditDialog {
     // Convert empty Hive strings to null for better dropdown handling
     String? sLevel = (group.level == '' || group.level == null) ? null : group.level;
     String? sGrade = (group.grade == '' || group.grade == null) ? null : group.grade;
-    String? sSubject = (group.subject == '' || group.subject == null) ? null : group.subject;
+    String? sSubject = group.subject == '' ? null : group.subject;
     String? sTeacherId = (group.teacherId == '' || group.teacherId == null) ? null : group.teacherId;
     String? sRoom = (group.roomName == '' || group.roomName == null) ? null : group.roomName;
     List<ScheduleSlot> regularSlots = List.from(group.regularSlots);
@@ -65,7 +65,7 @@ class GroupEditDialog {
             // Deduplicate teacher items to avoid "Duplicate items" crash
             final teacherItems = <String, String>{};
             for (var t in teachers) {
-              if (t.id != null && t.id!.isNotEmpty) teacherItems[t.id!] = t.name;
+              if (t.id.isNotEmpty) teacherItems[t.id] = t.name;
             }
 
             // Deduplicate room items
@@ -147,19 +147,21 @@ class GroupEditDialog {
                       items: teacherItems.entries.map((e) => DropdownMenuItem<String?>(value: e.key, child: Text(e.value, style: const TextStyle(color: AppTheme.textPrimary)))).toList(),
                       onChanged: (v) => setSt(() => sTeacherId = v),
                     ),
-                    const SizedBox(height: 12),
-                    DropdownButtonFormField<String?>(
-                      value: sRoom,
-                      hint: const Text('Choisir une salle'),
-                      dropdownColor: AppTheme.surface,
-                      style: const TextStyle(color: AppTheme.textPrimary),
-                      decoration: const InputDecoration(labelText: 'Salle', prefixIcon: Icon(Icons.meeting_room_outlined, color: AppTheme.primary)),
-                      items: [
-                        const DropdownMenuItem<String?>(value: null, child: Text('— Aucune —')),
-                        ...roomItems.map((r) => DropdownMenuItem<String?>(value: r, child: Text(r, style: const TextStyle(color: AppTheme.textPrimary)))),
-                      ],
-                      onChanged: (v) => setSt(() => sRoom = v),
-                    ),
+                    if (provider.showRooms) ...[
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String?>(
+                        value: sRoom,
+                        hint: const Text('Choisir une salle'),
+                        dropdownColor: AppTheme.surface,
+                        style: const TextStyle(color: AppTheme.textPrimary),
+                        decoration: const InputDecoration(labelText: 'Salle', prefixIcon: Icon(Icons.meeting_room_outlined, color: AppTheme.primary)),
+                        items: [
+                          const DropdownMenuItem<String?>(value: null, child: Text('— Aucune —')),
+                          ...roomItems.map((r) => DropdownMenuItem<String?>(value: r, child: Text(r, style: const TextStyle(color: AppTheme.textPrimary)))),
+                        ],
+                        onChanged: (v) => setSt(() => sRoom = v),
+                      ),
+                    ],
                     const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,

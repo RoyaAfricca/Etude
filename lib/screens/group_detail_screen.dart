@@ -13,6 +13,7 @@ import 'take_attendance_screen.dart';
 import '../services/pdf_service.dart';
 import '../models/schedule_slot.dart';
 import '../widgets/group_edit_dialog.dart';
+import '../widgets/group_notify_dialog.dart';
 import '../l10n/app_localizations.dart';
 
 class GroupDetailScreen extends StatefulWidget {
@@ -270,11 +271,40 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                         },
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    
+                    // Button: Informer le groupe (Message/SMS)
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.send_rounded, size: 24),
+                        label: const Text(
+                          "Informer le groupe (Message/SMS)",
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.orange.withOpacity(0.15),
+                          foregroundColor: AppTheme.orange,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                            side: const BorderSide(color: AppTheme.orange, width: 1.5),
+                          ),
+                        ),
+                        onPressed: () {
+                          final groupStudents = provider.getStudentsForGroup(widget.groupId);
+                          GroupNotifyDialog.show(context, groupStudents, group.name);
+                        },
+                      ),
+                    ),
                     const SizedBox(height: 24),
 
                     // ── Scheduling Section ──
-                    _buildSchedulingSection(context, provider, group),
-                    const SizedBox(height: 24),
+                    if (provider.showRooms) ...[
+                      _buildSchedulingSection(context, provider, group),
+                      const SizedBox(height: 24),
+                    ],
 
                     // Filter chips
                     SingleChildScrollView(
