@@ -40,7 +40,7 @@
         header {
             display: flex;
             justify-content: space-between;
-            alignment-items: center;
+            align-items: center;
             margin-bottom: 2rem;
         }
 
@@ -239,7 +239,8 @@
                     <th>Centre</th>
                     <th>Nom & Prénom</th>
                     <th>Téléphone</th>
-                    <th>Email</th>
+                    <th>Niveau</th>
+                    <th>Classe</th>
                     <th>Établissement</th>
                     <th>Actions</th>
                 </tr>
@@ -262,12 +263,13 @@
     import { getFirestore, collectionGroup, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
-        apiKey: "AIzaSyCZ22Yu6uEU4y1OpwJX5_Zmqk9gLHSkRY4",
-        authDomain: "etudeetude-sync.firebaseapp.com",
-        projectId: "etudeetude-sync",
-        storageBucket: "etudeetude-sync.firebasestorage.app",
-        messagingSenderId: "354064718130",
-        appId: "1:354064718130:android:033808c809572b2223df2b"
+        apiKey: "AIzaSyAN-Qd7kjXH-KaT4tnW5yYKg0lMhc1jokU",
+        authDomain: "gestionetude-2bf18.firebaseapp.com",
+        projectId: "gestionetude-2bf18",
+        storageBucket: "gestionetude-2bf18.firebasestorage.app",
+        messagingSenderId: "817901471261",
+        appId: "1:817901471261:web:fe8b036427b5a62e2ae8f4",
+        measurementId: "G-EWVX6N4K37"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -304,6 +306,8 @@
                     name: data.name || 'Inconnu',
                     phone: data.phone || '-',
                     email: data.email || '-',
+                    level: data.level || '-',
+                    grade: data.grade || '-',
                     school: data.originSchool || '-',
                 });
             });
@@ -331,7 +335,8 @@
                     <td><span class="badge">${s.center}</span></td>
                     <td style="font-weight: 600;">${s.name}</td>
                     <td>${s.phone}</td>
-                    <td>${s.email}</td>
+                    <td><span class="badge" style="background: rgba(245, 158, 11, 0.1); color: var(--accent);">${s.level}</span></td>
+                    <td>${s.grade}</td>
                     <td style="color: var(--text-secondary); font-size: 0.85rem;">${s.school}</td>
                     <td>
                         <a href="tel:${s.phone}" style="color: var(--primary);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></a>
@@ -349,6 +354,8 @@
             s.name.toLowerCase().includes(filter) || 
             s.phone.toLowerCase().includes(filter) || 
             s.school.toLowerCase().includes(filter) ||
+            s.level.toLowerCase().includes(filter) ||
+            s.grade.toLowerCase().includes(filter) ||
             s.center.toLowerCase().includes(filter)
         );
         renderTable(filtered);
@@ -358,10 +365,10 @@
         if (allStudents.length === 0) return alert("Aucune donnée à exporter");
         
         let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "Center ID,Nom,Telephone,Email,Ecole\n";
+        csvContent += "Center ID,Nom,Telephone,Niveau,Classe,Ecole\n";
         
         allStudents.forEach(s => {
-            csvContent += `"${s.center}","${s.name}","${s.phone}","${s.email}","${s.school}"\n`;
+            csvContent += `"${s.center}","${s.name}","${s.phone}","${s.level}","${s.grade}","${s.school}"\n`;
         });
         
         const encodedUri = encodeURI(csvContent);

@@ -49,7 +49,7 @@
         <div class="hero-text fade-in">
             <div class="hero-badge">
                 <span class="badge-dot"></span>
-                Nouvelle Version v1.2.0 - Biométrie & WhatsApp +216
+                Nouvelle Version v1.2.0+310326 — Caméra QR, Biométrie &amp; WhatsApp +216
             </div>
             <h1>Gérez vos élèves avec <span id="typing-text"></span><span class="cursor">|</span></h1>
             <p>La solution complète en Tunisie pour planifier vos séances, valider vos paiements par empreinte et automatiser vos rappels WhatsApp.</p>
@@ -242,7 +242,7 @@
         <div class="download-wrapper">
             <div class="section-tag" style="margin:0 auto 24px;">Installation</div>
             <h2>Prêt à optimiser vos cours ?</h2>
-            <p>Téléchargez la version v1.2.0 optimisée pour la Tunisie.</p>
+            <p>Téléchargez la version v1.2.0+310326 optimisée pour la Tunisie.</p>
             <div class="download-buttons">
                 <a href="etude_app_arm64.apk" download class="btn-download pulse-btn">
                     <div class="dl-icon"><i class="fa-brands fa-android"></i></div>
@@ -252,29 +252,61 @@
                     </div>
                 </a>
 
+                <a href="installers/application_etude.exe" download class="btn-download">
+                    <div class="dl-icon"><i class="fa-brands fa-windows"></i></div>
+                    <div class="dl-text">
+                        <small>Windows (Classique)</small>
+                        <strong>Installateur .EXE</strong>
+                    </div>
+                </a>
+
                 <a href="application_etude_windows.msix" download class="btn-download-outline">
                     <div class="dl-icon"><i class="fa-brands fa-windows"></i></div>
                     <div class="dl-text">
-                        <small>Windows (Installateur)</small>
+                        <small>Windows (Moderne)</small>
                         <strong>MSIX Store</strong>
                     </div>
                 </a>
             </div>
 
-            <!-- Guide d'installation Windows Card -->
-            <div class="glass support-card fade-in" style="margin-top: 32px; text-align: left; padding: 32px;">
+            <!-- Guide Android -->
+            <div class="glass support-card fade-in" style="margin-top: 24px; text-align: left; padding: 32px;">
+                <h3 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <i class="fa-brands fa-android" style="color: #10b981;"></i>
+                    Guide d'installation Android (APK)
+                </h3>
+                <div class="install-steps">
+                    <div class="step">
+                        <strong>L'application n'est pas sur the Play Store — installation directe :</strong>
+                        <ol style="margin-left: 24px; margin-top: 12px; color: var(--text-muted); font-size: 14px; line-height: 2;">
+                            <li>Téléchargez le fichier <b>.apk</b> en cliquant sur le bouton Android ci-dessus.</li>
+                            <li>Ouvrez le fichier téléchargé depuis le gestionnaire de fichiers.</li>
+                            <li>Si un message "Installation bloquée" apparaît → <b>Paramètres → Applications → Autoriser sources inconnues</b>.</li>
+                            <li>Tapez <b>Installer</b> et attendez quelques secondes.</li>
+                            <li>L'icône Étude apparaît sur votre écran d'accueil. ✅</li>
+                        </ol>
+                        <div style="margin-top: 12px; padding: 10px 14px; background: rgba(16,185,129,0.08); border-radius: 10px; border: 1px solid rgba(16,185,129,0.2); font-size: 13px; color: #6ee7b7;">
+                            <i class="fa-solid fa-shield-halved"></i>
+                            &nbsp;L'application n'accède à aucune donnée externe. Toutes vos données restent sur votre téléphone.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Guide Windows -->
+            <div class="glass support-card fade-in" style="margin-top: 24px; text-align: left; padding: 32px;">
                 <h3 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
                     <i class="fa-solid fa-circle-exclamation" style="color: var(--primary);"></i>
-                    Guide d'installation Windows
+                    Guide d'installation Windows (MSIX)
                 </h3>
                 <div class="install-steps">
                     <div class="step">
                         <strong>Installateur (Certificat) :</strong> Si vous avez l'erreur "Besoin d'un certificat", suivez ces étapes :
                         <ul style="margin-left: 24px; margin-top: 8px; color: var(--text-muted); font-size: 14px;">
-                            <li>Clic droit sur le fichier <b>.msix</b> -> Propriétés.</li>
-                            <li>Onglet <b>Signatures numériques</b> -> Sélectionner la ligne -> Détails.</li>
-                            <li>Afficher le certificat -> <b>Installer le certificat</b>.</li>
-                            <li>Choisir <b>Machine locale</b> -> Placer dans : <b>Personnes approuvées</b>.</li>
+                            <li>Clic droit sur le fichier <b>.msix</b> -&gt; Propriétés.</li>
+                            <li>Onglet <b>Signatures numériques</b> -&gt; Sélectionner la ligne -&gt; Détails.</li>
+                            <li>Afficher le certificat -&gt; <b>Installer le certificat</b>.</li>
+                            <li>Choisir <b>Machine locale</b> -&gt; Placer dans : <b>Personnes approuvées</b>.</li>
                             <li>Validez et relancez l'installation.</li>
                         </ul>
                     </div>
@@ -282,7 +314,7 @@
             </div>
             <p class="download-note">
                 <i class="fa-solid fa-circle-info"></i>
-                Indicate de confiance : L'application n'utilise aucune donnée personnelle externe.
+                Indicateur de confiance : L'application n'utilise aucune donnée personnelle externe.
             </p>
         </div>
     </section>
