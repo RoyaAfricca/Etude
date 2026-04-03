@@ -1,44 +1,28 @@
 @echo off
-title Compilation de l'EXE Flutter (Windows)
-color 0A
+set "FLUTTER=C:\Users\solta\develop\flutter\bin\flutter.bat"
+set "ISCC=E:\InnoSetup\ISCC.exe"
+set "OUTDIR=E:\etude\website\03042026"
 
-echo.
-echo ========================================================
-echo   Lancement de la compilation Windows...
-echo ========================================================
-echo.
-echo Cette operation peut prendre quelques minutes (telechargement des dependances, compilation...)
-echo.
+if not exist "%OUTDIR%" mkdir "%OUTDIR%"
 
-set "PUB_CACHE=E:\.pub-cache"
-set "GRADLE_USER_HOME=E:\.gradle"
-if not exist "%PUB_CACHE%" mkdir "%PUB_CACHE%"
-if not exist "%GRADLE_USER_HOME%" mkdir "%GRADLE_USER_HOME%"
+echo [1/4] Build Windows...
+call "%FLUTTER%" clean
+call "%FLUTTER%" build windows --release
+if %errorlevel% neq 0 exit /b %errorlevel%
 
-call C:\Users\solta\develop\flutter\bin\flutter.bat build windows --release
+echo [2/4] Copy to Adel...
+if not exist "Adel\EtudeWindows" mkdir "Adel\EtudeWindows"
+xcopy /E /Y /Q "build\windows\x64\runner\Release\*" "Adel\EtudeWindows\"
 
-if errorlevel 1 (
-    color 0C
-    echo.
-    echo ❌ ERREUR : La compilation a echoue. Lisez le texte rouge ci-dessus pour comprendre l'erreur.
-    pause
-    exit /b
+echo [3/4] Inno Setup...
+if exist "%ISCC%" (
+    "%ISCC%" "installer.iss"
+) else (
+    echo ISCC not found at %ISCC%
 )
 
-echo.
-echo ✅ Compilation reussie !
-echo.
-echo Copie de l'application dans le dossier Adel...
+echo [4/4] MSIX...
+call "%FLUTTER%" pub run msix:create
 
-mkdir "Adel\EtudeWindows" 2>nul
-xcopy /E /Y "build\windows\x64\runner\Release\*" "Adel\EtudeWindows\"
-
-echo.
-echo ========================================================
-echo   TERMINE ! L'application Windows est dans Adel\EtudeWindows
-echo   Lancez : Adel\EtudeWindows\etude_app.exe
-echo ========================================================
-echo.
-echo.
-rem pause
-exit /b 0
+echo Done.
+pause

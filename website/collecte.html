@@ -93,7 +93,7 @@
             position: relative;
         }
 
-        input {
+        input, select {
             width: 100%;
             background: var(--surface);
             border: 1px solid var(--border);
@@ -104,7 +104,7 @@
             transition: 0.2s;
         }
 
-        input:focus {
+        input:focus, select:focus {
             border-color: var(--primary);
             box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
         }
@@ -214,7 +214,11 @@
             </div>
             <div class="stat-card">
                 <h3 id="total-centers">0</h3>
-                <p>Centres Actifs</p>
+                <p>Centres / Enseignants</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="total-teachers-count">0</h3>
+                <p>Profs Identifiés</p>
             </div>
         </div>
     </header>
@@ -223,8 +227,17 @@
 
     <div class="controls">
         <div class="search-box">
-            <input type="text" id="search-input" placeholder="Rechercher un éleve, un niveau, un téléphone..." onkeyup="filterTable()">
+            <input type="text" id="search-input" placeholder="Rechercher un éleve, un téléphone..." onkeyup="filterTable()">
         </div>
+        <select id="filter-level" onchange="filterTable()" style="width: auto;">
+            <option value="">Tous les Niveaux</option>
+        </select>
+        <select id="filter-grade" onchange="filterTable()" style="width: auto;">
+            <option value="">Toutes les Classes</option>
+        </select>
+        <select id="filter-subject" onchange="filterTable()" style="width: auto;">
+            <option value="">Toutes les Matières</option>
+        </select>
         <button class="btn btn-export" onclick="exportCSV()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
             Exporter CSV
@@ -241,6 +254,7 @@
                     <th>Téléphone</th>
                     <th>Niveau</th>
                     <th>Classe</th>
+                    <th>Matière</th>
                     <th>Établissement</th>
                     <th>Actions</th>
                 </tr>
@@ -252,6 +266,26 @@
         <div id="loading">Chargement des données depuis Firestore...</div>
     </div>
 
+    <div class="card" style="margin-top: 2rem;">
+        <div style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="font-size: 1.2rem; font-weight: 600;">Centres & Enseignants Connectés</h2>
+            <span class="badge" id="sync-status">Mise à jour en temps réel</span>
+        </div>
+        <table id="center-table">
+            <thead>
+                <tr>
+                    <th>Nom du Centre / Enseignant</th>
+                    <th>ID Synchro</th>
+                    <th>Dernière Activité</th>
+                    <th>Statut</th>
+                </tr>
+            </thead>
+            <tbody id="center-table-body">
+                <!-- Data injected here -->
+            </tbody>
+        </table>
+    </div>
+
     <footer>
         &copy; 2026 Étude Management System - Administration Dashboard
     </footer>
@@ -260,21 +294,32 @@
 <!-- Firebase SDK -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collectionGroup, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collectionGroup, getDocs, query } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
     const firebaseConfig = {
-        apiKey: "AIzaSyAN-Qd7kjXH-KaT4tnW5yYKg0lMhc1jokU",
-        authDomain: "gestionetude-2bf18.firebaseapp.com",
-        projectId: "gestionetude-2bf18",
-        storageBucket: "gestionetude-2bf18.firebasestorage.app",
-        messagingSenderId: "817901471261",
-        appId: "1:817901471261:web:fe8b036427b5a62e2ae8f4",
-        measurementId: "G-EWVX6N4K37"
+      apiKey: "AIzaSyAN-Qd7kjXH-KaT4tnW5yYKg0lMhc1jokU",
+      authDomain: "gestionetude-2bf18.firebaseapp.com",
+      projectId: "gestionetude-2bf18",
+      storageBucket: "gestionetude-2bf18.firebasestorage.app",
+      messagingSenderId: "817901471261",
+      appId: "1:817901471261:web:fe8b036427b5a62e2ae8f4",
+      measurementId: "G-EWVX6N4K37"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
     let allStudents = [];
+    let filteredStudents = [];
+
+    function populateSelect(id, setValues) {
+        const select = document.getElementById(id);
+        const options = Array.from(setValues).filter(v => v !== '-').sort();
+        const baseHTML = select.options[0].outerHTML;
+        select.innerHTML = baseHTML + options.map(v => `<option value="${v}">${v}</option>`).join('');
+    }
 
     window.fetchData = async function() {
         const loading = document.getElementById('loading');
@@ -286,43 +331,123 @@
         tbody.innerHTML = '';
         
         try {
-            // Collection Group Query pour récupérer TOUS les élèves de TOUS les centres
+            // S'authentifier anonymement d'abord pour respecter les règles de sécurité
+            await signInAnonymously(auth);
+
+            // Fetch Center Metadata (Names)
+            const centersSnapshot = await getDocs(query(collectionGroup(db, 'centers')));
+            const centerNames = {};
+            const centerList = [];
+            let totalTeachersIdentified = 0;
+
+            centersSnapshot.forEach(doc => {
+                const cData = doc.data();
+                centerNames[doc.id] = cData.centerName || doc.id;
+                
+                const lastUpdate = cData.lastUpdate ? new Date(cData.lastUpdate.seconds * 1000).toLocaleString() : 'Inconnue';
+                const isTeacher = (cData.centerName || '').toLowerCase().includes('enseignant');
+                if (isTeacher) totalTeachersIdentified++;
+
+                centerList.push({
+                    id: doc.id,
+                    name: cData.centerName || "Sans nom",
+                    lastActivity: lastUpdate,
+                    type: isTeacher ? 'Enseignant' : 'Centre'
+                });
+            });
+
+            // Fetch groups to map groupId -> subject
+            const groupsQuery = query(collectionGroup(db, 'groups'));
+            const groupsSnapshot = await getDocs(groupsQuery);
+            const groupSubjects = {};
+            const subjectsSet = new Set();
+            
+            groupsSnapshot.forEach(doc => {
+                const subj = doc.data().subject || 'Inconnu';
+                groupSubjects[doc.id] = subj;
+                subjectsSet.add(subj);
+            });
+
+            // Fetch all students
             const studentsQuery = query(collectionGroup(db, 'students'));
             const querySnapshot = await getDocs(studentsQuery);
             
             allStudents = [];
             const centers = new Set();
+            const levelsSet = new Set();
+            const gradesSet = new Set();
 
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
-                // On récupère le SyncKey du document parent centers/{syncKey}/students/...
                 const pathParts = doc.ref.path.split('/');
                 const syncKey = pathParts[1];
                 
                 centers.add(syncKey);
+                
+                const level = data.level || '-';
+                const grade = data.grade || '-';
+                const subj = groupSubjects[data.groupId] || '-';
+                const cName = centerNames[syncKey] || syncKey;
+                
+                levelsSet.add(level);
+                gradesSet.add(grade);
+
                 allStudents.push({
                     id: doc.id,
-                    center: syncKey,
+                    center: cName,
+                    centerId: syncKey,
                     name: data.name || 'Inconnu',
                     phone: data.phone || '-',
                     email: data.email || '-',
-                    level: data.level || '-',
-                    grade: data.grade || '-',
+                    level: level,
+                    grade: grade,
+                    subject: subj,
                     school: data.originSchool || '-',
                 });
             });
 
-            renderTable(allStudents);
+            populateSelect('filter-level', levelsSet);
+            populateSelect('filter-grade', gradesSet);
+            populateSelect('filter-subject', subjectsSet);
+
+            filteredStudents = [...allStudents];
+            renderTable(filteredStudents);
+            renderCenterTable(centerList);
+
             document.getElementById('total-students').innerText = allStudents.length;
             document.getElementById('total-centers').innerText = centers.size;
+            document.getElementById('total-teachers-count').innerText = totalTeachersIdentified;
             loading.style.display = 'none';
 
         } catch (e) {
             console.error("Error fetching data: ", e);
             loading.style.display = 'none';
-            errorMsg.innerText = "Erreur: Impossible de récupérer les données. Vérifiez l'indexation Firestore (Collection Group Query). " + e.message;
+            errorMsg.innerText = "Erreur: Impossible de récupérer les données. " + e.message;
             errorMsg.style.display = 'block';
         }
+    }
+
+    function renderCenterTable(centers) {
+        const tbody = document.getElementById('center-table-body');
+        tbody.innerHTML = '';
+        centers.sort((a,b) => b.lastActivity.localeCompare(a.lastActivity));
+        
+        centers.forEach(c => {
+            const row = `
+                <tr>
+                    <td style="font-weight: 600;">${c.name}</td>
+                    <td><span class="badge" style="font-family: monospace;">${c.id}</span></td>
+                    <td style="color: var(--text-secondary);">${c.lastActivity}</td>
+                    <td>
+                        <span class="badge" style="background: ${c.type === 'Enseignant' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(56, 189, 248, 0.1)'}; 
+                                                 color: ${c.type === 'Enseignant' ? 'var(--success)' : 'var(--primary)'};">
+                            ${c.type}
+                        </span>
+                    </td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
     }
 
     function renderTable(data) {
@@ -337,6 +462,7 @@
                     <td>${s.phone}</td>
                     <td><span class="badge" style="background: rgba(245, 158, 11, 0.1); color: var(--accent);">${s.level}</span></td>
                     <td>${s.grade}</td>
+                    <td>${s.subject}</td>
                     <td style="color: var(--text-secondary); font-size: 0.85rem;">${s.school}</td>
                     <td>
                         <a href="tel:${s.phone}" style="color: var(--primary);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></a>
@@ -348,27 +474,35 @@
     }
 
     window.filterTable = function() {
-        const input = document.getElementById('search-input');
-        const filter = input.value.toLowerCase();
-        const filtered = allStudents.filter(s => 
-            s.name.toLowerCase().includes(filter) || 
-            s.phone.toLowerCase().includes(filter) || 
-            s.school.toLowerCase().includes(filter) ||
-            s.level.toLowerCase().includes(filter) ||
-            s.grade.toLowerCase().includes(filter) ||
-            s.center.toLowerCase().includes(filter)
-        );
-        renderTable(filtered);
+        const input = document.getElementById('search-input').value.toLowerCase();
+        const levelFilter = document.getElementById('filter-level').value;
+        const gradeFilter = document.getElementById('filter-grade').value;
+        const subjectFilter = document.getElementById('filter-subject').value;
+
+        filteredStudents = allStudents.filter(s => {
+            const matchesSearch = s.name.toLowerCase().includes(input) || 
+                                  s.phone.toLowerCase().includes(input) || 
+                                  s.school.toLowerCase().includes(input) ||
+                                  s.center.toLowerCase().includes(input);
+            const matchesLevel = levelFilter === "" || s.level === levelFilter;
+            const matchesGrade = gradeFilter === "" || s.grade === gradeFilter;
+            const matchesSubject = subjectFilter === "" || s.subject === subjectFilter;
+            
+            return matchesSearch && matchesLevel && matchesGrade && matchesSubject;
+        });
+
+        renderTable(filteredStudents);
     }
 
     window.exportCSV = function() {
-        if (allStudents.length === 0) return alert("Aucune donnée à exporter");
+        if (filteredStudents.length === 0) return alert("Aucune donnée à exporter");
         
-        let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "Center ID,Nom,Telephone,Niveau,Classe,Ecole\n";
+        let csvContent = "data:text/csv;charset=utf-8,%EF%BB%BF"; // BOM pour Excel UTF-8
+        csvContent += '"Center ID","Nom","Telephone","Niveau","Classe","Matiere","Ecole"\n';
         
-        allStudents.forEach(s => {
-            csvContent += `"${s.center}","${s.name}","${s.phone}","${s.level}","${s.grade}","${s.school}"\n`;
+        filteredStudents.forEach(s => {
+            const row = [s.center, s.name, s.phone, s.level, s.grade, s.subject, s.school].map(v => `"${v}"`).join(";");
+            csvContent += row + "\n";
         });
         
         const encodedUri = encodeURI(csvContent);

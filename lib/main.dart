@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
@@ -22,7 +21,6 @@ import 'screens/login_screen.dart';
 import 'screens/activation_screen.dart';
 import 'services/activation_service.dart';
 import 'services/center_service.dart';
-import 'services/update_service.dart';
 import 'theme/app_theme.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -74,24 +72,6 @@ void main() async {
   await Hive.openBox<Group>('groups');
   await Hive.openBox('settings');
 
-  // 2. Initialize Cloud services (Non-blocking or at least after UI/Data ready)
-  try {
-    if (!kIsWeb && Platform.isWindows) {
-      await Firebase.initializeApp(
-        options: const FirebaseOptions(
-          apiKey: "AIzaSyCZ22Yu6uEU4y1OpwJX5_Zmqk9gLHSkRY4",
-          appId: "1:354064718130:android:033808c809572b2223df2b",
-          messagingSenderId: "354064718130",
-          projectId: "etudeetude-sync",
-          storageBucket: "etudeetude-sync.firebasestorage.app",
-        ),
-      );
-    } else {
-      await Firebase.initializeApp();
-    }
-  } catch (e) {
-    debugPrint('Firebase initialization error: $e. Cloud sync will be disabled.');
-  }
 
   // Set status bar style (mobile only)
   if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
@@ -122,70 +102,9 @@ class _EtudeAppState extends State<EtudeApp> {
   void initState() {
     super.initState();
     _startTrialTimer();
-    // Lancer la vérification de mise à jour au démarrage
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkUpdate();
-    });
+    // No online checks in offline mode
   }
 
-  Future<void> _checkUpdate() async {
-    final updateData = await UpdateService.checkUpdate();
-    if (updateData != null && mounted) {
-      _showUpdateDialog(updateData);
-    }
-  }
-
-  void _showUpdateDialog(Map<String, dynamic> updateData) {
-    showDialog(
-      context: navigatorKey.currentContext!,
-      barrierDismissible: true,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        icon: const Icon(Icons.system_update_rounded, color: AppTheme.accent, size: 48),
-        title: Text(
-          'Mise à jour disponible',
-          style: TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'La version ${updateData['version']} est maintenant disponible.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppTheme.textSecondary),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Souhaitez-vous la télécharger maintenant ?',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppTheme.textMuted, fontSize: 13),
-            ),
-          ],
-        ),
-        actionsAlignment: MainAxisAlignment.spaceBetween,
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Plus tard', style: TextStyle(color: AppTheme.textMuted)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              UpdateService.launchUpdate(updateData['url']);
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.accent,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-            child: const Text('Mettre à jour'),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _startTrialTimer() {
     _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
@@ -209,10 +128,15 @@ class _EtudeAppState extends State<EtudeApp> {
 
   Widget _getStartScreen() {
     final centerConfig = CenterConfigService();
-    // Premier lancement : choisir le mode
-    if (!centerConfig.isModeConfigured) {
+    final authService = AppAuthService();
+
+    // Premier lancement ou configuration incomplète : 
+    // Si le mode n'est pas choisi OU si le mot de passe par défaut n'a pas été changé,
+    // on considère que l'onboarding n'est pas terminé.
+    if (!centerConfig.isModeConfigured || authService.mustChangePassword) {
       return const OnboardingScreen();
     }
+
     // Windows : login + mot de passe
     if (Platform.isWindows) {
       return const LoginScreen();

@@ -1,11 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
+// Removed unused imports: provider and app_provider
 import '../models/student_model.dart';
 import '../services/notification_service.dart';
-import '../services/sync_service.dart';
-import '../providers/app_provider.dart';
+// import '../providers/app_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/phone_validator.dart';
 
@@ -59,7 +58,6 @@ class _GroupNotifyDialogState extends State<GroupNotifyDialog> {
   @override
   void initState() {
     super.initState();
-    // Par défaut, Email sur Windows, ou ce qui est disponible
     if (Platform.isWindows) {
       _selectedMethod = NotificationMethod.email;
     } else {
@@ -120,8 +118,6 @@ class _GroupNotifyDialogState extends State<GroupNotifyDialog> {
     setState(() => _isSending = true);
 
     bool success = false;
-    final syncService = SyncService();
-    final isPc = Platform.isWindows;
 
     try {
       switch (_selectedMethod) {
@@ -133,26 +129,13 @@ class _GroupNotifyDialogState extends State<GroupNotifyDialog> {
           );
           break;
         case NotificationMethod.sms:
-          if (isPc) {
-            // Envoi via le pont vers le téléphone lié
-            await syncService.pushRemoteMessage('sms', recipients.join(','), message);
-            success = true;
-          } else {
-            success = await NotificationService.sendBulkSMS(recipients, message);
-          }
+          success = await NotificationService.sendBulkSMS(recipients, message);
           break;
         case NotificationMethod.whatsapp:
-          if (isPc) {
-            // WhatsApp via le pont (on garde le split effectué par _getRecipients)
-            await syncService.pushRemoteMessage('whatsapp', recipients.join(','), message);
-            success = true;
+          if (recipients.length == 1) {
+            success = await NotificationService.sendWhatsApp(recipients.first, message);
           } else {
-            if (recipients.length == 1) {
-              success = await NotificationService.sendWhatsApp(recipients.first, message);
-            } else {
-              // Si plusieurs numéros, on privilégie l'ouverture bulk
-              success = await NotificationService.sendBulkWhatsApp(recipients, message);
-            }
+            success = await NotificationService.sendBulkWhatsApp(recipients, message);
           }
           break;
       }
@@ -180,13 +163,9 @@ class _GroupNotifyDialogState extends State<GroupNotifyDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<AppProvider>();
-    final isSyncing = provider.isSyncing;
     final recipientsCount = _getRecipients().length;
-    
-    // On PC, can use SMS/WA only if sync is active
-    final canUseSms = !Platform.isWindows || isSyncing;
-    final canUseWhatsapp = !Platform.isWindows || isSyncing;
+    final canUseSms = !Platform.isWindows;
+    final canUseWhatsapp = !Platform.isWindows;
 
     return AlertDialog(
       backgroundColor: AppTheme.surface,
@@ -210,7 +189,6 @@ class _GroupNotifyDialogState extends State<GroupNotifyDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Méthode de sélection
               Text(
                 'Méthode d\'envoi',
                 style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textSecondary),
@@ -229,7 +207,7 @@ class _GroupNotifyDialogState extends State<GroupNotifyDialog> {
                     _buildMethodOption(
                       method: NotificationMethod.sms,
                       icon: Icons.sms_outlined,
-                      label: Platform.isWindows ? 'SMS (Téléphone)' : 'SMS',
+                      label: 'SMS',
                       isSelected: _selectedMethod == NotificationMethod.sms,
                     ),
                   ],
@@ -238,15 +216,13 @@ class _GroupNotifyDialogState extends State<GroupNotifyDialog> {
                     _buildMethodOption(
                       method: NotificationMethod.whatsapp,
                       icon: Icons.chat_outlined,
-                      label: Platform.isWindows ? 'WA (Téléphone)' : 'WhatsApp',
+                      label: 'WhatsApp',
                       isSelected: _selectedMethod == NotificationMethod.whatsapp,
                     ),
                   ],
                 ],
               ),
               const SizedBox(height: 20),
-
-              // Liste des modèles
               Text(
                 'Modèles rapides',
                 style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textSecondary),
@@ -266,8 +242,6 @@ class _GroupNotifyDialogState extends State<GroupNotifyDialog> {
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Zone de saisie
               TextField(
                 controller: _messageController,
                 maxLines: 5,
@@ -280,8 +254,6 @@ class _GroupNotifyDialogState extends State<GroupNotifyDialog> {
                 ),
               ),
               const SizedBox(height: 12),
-              
-              // Infos destinataires
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -324,7 +296,7 @@ class _GroupNotifyDialogState extends State<GroupNotifyDialog> {
           icon: _isSending 
             ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
             : const Icon(Icons.send_rounded, size: 18),
-          label: Text(_isSending ? 'Ouverture...' : (Platform.isWindows && _selectedMethod != NotificationMethod.email ? 'Envoyer au téléphone' : 'Envoyer')),
+          label: Text(_isSending ? 'Ouverture...' : 'Envoyer'),
           style: ElevatedButton.styleFrom(
             backgroundColor: _selectedMethod == NotificationMethod.email ? AppTheme.primary : AppTheme.orange,
             foregroundColor: Colors.white,

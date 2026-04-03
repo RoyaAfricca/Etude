@@ -27,6 +27,15 @@ class ScheduleSlot extends HiveObject {
     required this.endMinute,
   });
 
+  int get startInMinutes => startHour * 60 + startMinute;
+  int get endInMinutes => endHour * 60 + endMinute;
+
+  bool overlapsWith(ScheduleSlot other) {
+    if (dayOfWeek != other.dayOfWeek) return false;
+    // (StartA < EndB) and (EndA > StartB)
+    return startInMinutes < other.endInMinutes && endInMinutes > other.startInMinutes;
+  }
+
   String get timeRange => '${startHour.toString().padLeft(2, '0')}:${startMinute.toString().padLeft(2, '0')} - ${endHour.toString().padLeft(2, '0')}:${endMinute.toString().padLeft(2, '0')}';
 
   String dayName(bool isAr) {

@@ -10,7 +10,7 @@ import '../theme/app_theme.dart';
 import '../utils/auth_helper.dart';
 import '../services/import_service.dart';
 import '../utils/phone_validator.dart';
-import 'qr_sync_screen.dart';
+// import 'room_occupation_screen.dart';
 
 class CenterSettingsScreen extends StatefulWidget {
   const CenterSettingsScreen({super.key});
@@ -658,20 +658,6 @@ class _CenterSettingsScreenState extends State<CenterSettingsScreen>
           ),
           const SizedBox(height: 12),
 
-          // Cloud Sync Button
-          if (context.read<AppProvider>().isSyncFeatureAvailable)
-            _buildMaintenanceButton(
-              icon: Icons.cloud_sync_rounded,
-              label: 'Synchronisation Cloud',
-              description: 'Lier mon téléphone pour faire l\'appel en temps réel',
-              color: const Color(0xFF6C63FF),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const QrSyncScreen()),
-                );
-              },
-            ),
           const SizedBox(height: 40),
         ],
       ),

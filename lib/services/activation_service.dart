@@ -14,9 +14,11 @@ class ActivationService {
   // Clé secrète HMAC — gardez-la confidentielle
   static const String _secretKey = 'ETUDE_SECRET_KEY_2024';
 
-  // Durée d'activation (24 mois = 730 jours) et d'essai en jours
+  // Durée d'activation (24 mois = 730 jours)
   static const int _activationDurationDays = 730;
-  static const int _trialDurationDays = 32;
+
+  // Date limite d'essai gratuit : 20 octobre 2026
+  static final DateTime _trialExpiryDate = DateTime(2026, 10, 20, 23, 59, 59);
 
   final Box _box;
 
@@ -77,10 +79,8 @@ class ActivationService {
       return true;
     }
 
-    final firstLaunchTime =
-        DateTime.fromMillisecondsSinceEpoch(firstLaunchTimestamp);
-    final elapsed = DateTime.now().difference(firstLaunchTime);
-    return elapsed.inDays < _trialDurationDays;
+    // Essai valide si la date actuelle est avant la date d'expiration (20/10/2026)
+    return DateTime.now().isBefore(_trialExpiryDate);
   }
 
   /// Jours d'essai restants. -1 si activé à vie, 0 si expiré.
@@ -88,13 +88,8 @@ class ActivationService {
     final isActivated = _box.get(_isActivatedKey, defaultValue: false) as bool;
     if (isActivated) return -1;
 
-    final firstLaunchTimestamp = _box.get(_firstLaunchTimeKey) as int?;
-    if (firstLaunchTimestamp == null) return _trialDurationDays;
-
-    final firstLaunchTime =
-        DateTime.fromMillisecondsSinceEpoch(firstLaunchTimestamp);
-    final elapsed = DateTime.now().difference(firstLaunchTime).inDays;
-    final remaining = _trialDurationDays - elapsed;
+    // Pas besoin de vérifier firstLaunchTimestamp — on se base sur la date fixe
+    final remaining = _trialExpiryDate.difference(DateTime.now()).inDays;
     return remaining > 0 ? remaining : 0;
   }
 

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -57,27 +56,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     await context.read<AppProvider>().saveAppMode(isCenter);
     if (!mounted) return;
     
-    // Si Android, on passe à l'étape de synchro, sinon direct au Login
-    if (Platform.isAndroid) {
-      _animController.reset();
-      setState(() => _step = 2);
-      _animController.forward();
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen(isFirstLaunch: true)),
-      );
-    }
-  }
-
-  Future<void> _selectSync(bool visible) async {
-    await context.read<AppProvider>().setSyncVisibility(visible);
-    if (!mounted) return;
+    // Pour Android et Windows, on va désormais direct au Login en mode 100% Hors-ligne
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (_) => const LoginScreen(isFirstLaunch: true)),
     );
   }
+
 
   AppLocalizations get _l => AppLocalizations(_selectedLanguage);
 
@@ -96,7 +81,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 position: _slideAnim,
                 child: _step == 0 
                   ? _buildLanguageStep() 
-                  : (_step == 1 ? _buildModeStep() : _buildSyncStep()),
+                  : _buildModeStep(),
               ),
             ),
           ),
@@ -278,6 +263,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             gradientColors: const [Color(0xFF00BCD4), Color(0xFF0097A7)],
             onTap: () => _selectMode(true),
           ),
+          const SizedBox(height: 20),
+
           const Spacer(),
           Text(
             'Étude — ${l.appName}',
@@ -289,80 +276,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     );
   }
 
-  // ── Étape 2 : Choix de Synchro (Android uniquement) ────────────────────────
-  Widget _buildSyncStep() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const SizedBox(height: 24),
-          Container(
-            width: 90,
-            height: 90,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFF6C63FF), Color(0xFF00BCD4)]),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: AppTheme.primaryShadow,
-            ),
-            child: const Icon(Icons.cloud_sync_rounded, color: Colors.white, size: 48),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            _selectedLanguage == 'ar' ? 'المزامنة مع الحاسوب' : 'Liaison avec le PC',
-            style: GoogleFonts.outfit(
-              fontSize: 26,
-              fontWeight: FontWeight.w800,
-              color: AppTheme.textPrimary,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 10),
-          Text(
-            _selectedLanguage == 'ar' 
-              ? 'هل ترغب في ربط هذا التطبيق بنسخة الحاسوب لمزامنة البيانات؟' 
-              : 'Souhaitez-vous lier cette application avec la version PC pour synchroniser vos données ?',
-            style: GoogleFonts.outfit(
-              fontSize: 14,
-              color: AppTheme.textSecondary,
-              height: 1.5,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 40),
-
-          // Choix OUI
-          _ModeCard(
-            icon: Icons.check_circle_outline_rounded,
-            title: _selectedLanguage == 'ar' ? 'نعم، أرغب في الربط' : 'Oui, lier au PC',
-            description: _selectedLanguage == 'ar' ? 'تفعيل خيارات المزامنة وربط الهوية' : 'Activer les options de synchronisation cloud',
-            gradientColors: const [Color(0xFF6C63FF), Color(0xFF8B83FF)],
-            onTap: () => _selectSync(true),
-          ),
-          const SizedBox(height: 20),
-
-          // Choix NON
-          _ModeCard(
-            icon: Icons.cloud_off_rounded,
-            title: _selectedLanguage == 'ar' ? 'لا، شكراً' : 'Non, pas maintenant',
-            description: _selectedLanguage == 'ar' ? 'استخدام التطبيق بشكل مستقل تماماً' : 'Utiliser l\'application de manière autonome',
-            gradientColors: const [Color(0xFF9E9E9E), Color(0xFF757575)],
-            onTap: () => _selectSync(false),
-          ),
-          const Spacer(),
-          TextButton(
-            onPressed: () {
-               _animController.reset();
-               setState(() => _step = 1);
-               _animController.forward();
-            },
-               child: Text(_selectedLanguage == 'ar' ? 'السابق' : 'Retour', style: TextStyle(color: AppTheme.textMuted)),
-          ),
-          const SizedBox(height: 8),
-        ],
-      ),
-    );
-  }
 }
 
 // ── Carte de langue ───────────────────────────────────────────────────────────

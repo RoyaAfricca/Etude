@@ -3,8 +3,11 @@ import 'package:google_fonts/google_fonts.dart';
 import '../services/center_service.dart';
 import '../services/activation_service.dart';
 import '../theme/app_theme.dart';
+import 'package:provider/provider.dart';
+import '../providers/app_provider.dart';
 import 'activation_screen.dart';
 import 'dashboard_screen.dart';
+import 'onboarding_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   final bool isFirstLaunch;
@@ -168,6 +171,18 @@ class _LoginScreenState extends State<LoginScreen>
                       _buildChangePasswordForm()
                     else
                       _buildLoginForm(),
+
+                    const SizedBox(height: 32),
+                    TextButton(
+                      onPressed: () => _confirmHardReset(context),
+                      child: Text(
+                        'Réinitialiser l\'application',
+                        style: TextStyle(
+                            color: AppTheme.textMuted.withOpacity(0.5),
+                            fontSize: 12,
+                            decoration: TextDecoration.underline),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -533,5 +548,42 @@ class _LoginScreenState extends State<LoginScreen>
         );
       }
     );
+  }
+
+  Future<void> _confirmHardReset(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surface,
+        title: const Text('Réinitialisation complète ?',
+            style: TextStyle(color: AppTheme.textPrimary)),
+        content: const Text(
+          'Cela supprimera TOUTES vos données localement (Élèves, Groupes, Paramètres) définitivement.',
+          style: TextStyle(color: AppTheme.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler',
+                style: TextStyle(color: AppTheme.textMuted)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.danger),
+            child: const Text('Tout supprimer',
+                style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      context.read<AppProvider>().hardReset();
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+        (route) => false,
+      );
+    }
   }
 }

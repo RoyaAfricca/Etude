@@ -164,6 +164,15 @@ class AppLocalizations {
   String get startTime => isAr ? 'وقت البدء' : 'Heure de début';
   String get endTime => isAr ? 'وقت النهاية' : 'Heure de fin';
   String get clearSchedule => isAr ? 'مسح الجدول' : 'Effacer l\'emploi du temps';
+  String get globalView => isAr ? 'عرض شامل' : 'Vue Globale';
+  String get weeklyView => isAr ? 'عرض أسبوعي' : 'Vue Hebdomadaire';
+  String get findFreeRoom => isAr ? 'البحث عن قاعة شاغرة' : 'Trouver une salle libre';
+  String get noFreeRoom => isAr ? 'لم يتم العثور على قاعة شاغرة' : 'Aucune salle libre trouvée';
+  String get conflictWarning => isAr ? 'هذه القاعة مشغولة بالفعل في هذا الوقت.' : 'Cette salle est engagée dans cet horaire.';
+  String get checkAvailability => isAr ? 'التحقق من التوفر' : 'Vérifier la disponibilité';
+  String get selectDate => isAr ? 'اختر التاريخ' : 'Choisir une date';
+  String get nextDay => isAr ? 'اليوم التالي' : 'Jour suivant';
+  String get prevDay => isAr ? 'اليوم السابق' : 'Jour précédent';
 
   // ── Months ──────────────────────────────────────────────────────────────────
   String monthName(int m) {
@@ -179,6 +188,15 @@ class AppLocalizations {
       'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
     ];
     return months[m - 1];
+  }
+
+  String dayName(int d) {
+    if (isAr) {
+      const days = ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'];
+      return days[d - 1];
+    }
+    const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+    return days[d - 1];
   }
 
   // Get from context

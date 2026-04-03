@@ -3,11 +3,13 @@ import 'package:provider/provider.dart';
 
 import '../providers/app_provider.dart';
 import '../theme/app_theme.dart';
+import '../l10n/app_localizations.dart';
 import '../utils/auth_helper.dart';
 import '../models/schedule_slot.dart';
 import 'group_detail_screen.dart';
 import '../widgets/group_edit_dialog.dart';
 import '../widgets/group_notify_dialog.dart';
+import '../widgets/slot_add_dialog.dart';
 import '../widgets/multi_group_notify_dialog.dart';
 
 class GroupsScreen extends StatelessWidget {
@@ -389,10 +391,30 @@ class GroupsScreen extends StatelessWidget {
                     ),
                   ],
                   const SizedBox(height: 12),
+                  if (regularSlots.isNotEmpty) ...[
+                    const Text('Horaires sélectionnés :', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    ...regularSlots.map((slot) => Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.access_time_filled, size: 14, color: AppTheme.primary),
+                          const SizedBox(width: 8),
+                          Text('${slot.dayName(provider.isAr)} ${slot.timeRange}', style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13)),
+                          const Spacer(),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline, size: 18, color: AppTheme.danger),
+                            onPressed: () => setSt(() => regularSlots.remove(slot)),
+                          ),
+                        ],
+                      ),
+                    )),
+                    const SizedBox(height: 8),
+                  ],
                   TextButton.icon(
-                    onPressed: () => _showAddSlotDialog(ctx, (newSlot) => setSt(() => regularSlots.add(newSlot))),
+                    onPressed: () => SlotAddDialog.show(ctx, (newSlot) => setSt(() => regularSlots.add(newSlot))),
                     icon: const Icon(Icons.add),
-                    label: const Text('Panifier un horaire'),
+                    label: const Text('Planifier un horaire'),
                   ),
                   const SizedBox(height: 24),
                   SizedBox(
@@ -400,6 +422,25 @@ class GroupsScreen extends StatelessWidget {
                     height: 52,
                     child: ElevatedButton(
                       onPressed: canCreate ? () {
+                        // Check for room conflict
+                        if (selectedRoom != null) {
+                          final l = AppLocalizations.of(context);
+                          final conflictGroup = provider.checkRoomConflict(selectedRoom!, regularSlots);
+                          if (conflictGroup != null) {
+                             showDialog(
+                               context: context,
+                               builder: (c) => AlertDialog(
+                                 title: Text(l.conflictsFound, style: const TextStyle(color: AppTheme.danger, fontWeight: FontWeight.bold)),
+                                 content: Text('${l.conflictWarning}\n\n${l.roomOccupiedBy} : ${conflictGroup.name}'),
+                                 actions: [
+                                   TextButton(onPressed: () => Navigator.pop(c), child: Text(l.close)),
+                                 ],
+                               ),
+                             );
+                             return;
+                          }
+                        }
+
                         String generatedSchedule = regularSlots.isEmpty ? '' : regularSlots.map((s) => '${s.dayName(provider.isAr)} ${s.timeRange}').join(' , ');
                         provider.addGroup(nameCtl.text.trim(), selectedSubject!, generatedSchedule, teacherId: selectedTeacherId, roomName: selectedRoom, level: selectedLevel, grade: selectedGrade, regularSlots: regularSlots);
                         Navigator.pop(ctx);
@@ -488,68 +529,4 @@ class _StatItem extends StatelessWidget {
       ],
     );
   }
-}
-
-void _showAddSlotDialog(BuildContext context, Function(ScheduleSlot) onAdded) {
-  final List<String> days = [
-    'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'
-  ];
-  String selectedDay = days[0];
-  TimeOfDay startTime = const TimeOfDay(hour: 8, minute: 0);
-  TimeOfDay endTime = const TimeOfDay(hour: 10, minute: 0);
-
-  showDialog(
-    context: context,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setSt) => AlertDialog(
-        backgroundColor: AppTheme.surface,
-        title: const Text('Ajouter un horaire', style: TextStyle(color: AppTheme.textPrimary)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DropdownButton<String>(
-              value: selectedDay,
-              dropdownColor: AppTheme.surface,
-              isExpanded: true,
-              items: days.map((d) => DropdownMenuItem(value: d, child: Text(d, style: const TextStyle(color: AppTheme.textPrimary)))).toList(),
-              onChanged: (v) => setSt(() => selectedDay = v!),
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              title: const Text('Début', style: TextStyle(color: AppTheme.textPrimary)),
-              trailing: Text(startTime.format(ctx)),
-              onTap: () async {
-                final t = await showTimePicker(context: ctx, initialTime: startTime);
-                if (t != null) setSt(() => startTime = t);
-              },
-            ),
-            ListTile(
-              title: const Text('Fin', style: TextStyle(color: AppTheme.textPrimary)),
-              trailing: Text(endTime.format(ctx)),
-              onTap: () async {
-                final t = await showTimePicker(context: ctx, initialTime: endTime);
-                if (t != null) setSt(() => endTime = t);
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
-          ElevatedButton(
-            onPressed: () {
-              onAdded(ScheduleSlot(
-                dayOfWeek: days.indexOf(selectedDay) + 1,
-                startHour: startTime.hour,
-                startMinute: startTime.minute,
-                endHour: endTime.hour,
-                endMinute: endTime.minute,
-              ));
-              Navigator.pop(ctx);
-            },
-            child: const Text('Ajouter'),
-          ),
-        ],
-      ),
-    ),
-  );
 }

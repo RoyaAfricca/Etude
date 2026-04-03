@@ -14,7 +14,6 @@ import 'center_revenue_screen.dart';
 import 'login_screen.dart';
 import 'teacher_reports_screen.dart';
 import '../l10n/app_localizations.dart';
-import 'qr_sync_screen.dart';
 import 'room_occupation_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -128,18 +127,6 @@ class DashboardScreen extends StatelessWidget {
                   }),
                   // Mode Vacances Toggle
                   _buildHolidayToggle(context, provider),
-                  // Cloud Sync Status Icon
-                  IconButton(
-                    icon: Icon(
-                      provider.cloudSyncEnabled ? Icons.cloud_done_rounded : Icons.cloud_off_rounded,
-                      color: provider.cloudSyncEnabled ? AppTheme.success : AppTheme.textMuted,
-                      size: 20,
-                    ),
-                    onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const QrSyncScreen()));
-                    },
-                    tooltip: 'Synchronisation Cloud',
-                  ),
                   // Reset button
                   Container(
                     margin: const EdgeInsets.only(right: 8),
@@ -489,6 +476,7 @@ class DashboardScreen extends StatelessWidget {
     controller.dispose();
     return result ?? false;
   }
+
 }
 
 // ── Revenue Card ──

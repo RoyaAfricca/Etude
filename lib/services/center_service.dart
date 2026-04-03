@@ -89,9 +89,9 @@ class Teacher {
       };
 
   factory Teacher.fromJson(Map<String, dynamic> json) => Teacher(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        phone: json['phone'] as String? ?? '',
+        id: json['id']?.toString() ?? '',
+        name: json['name']?.toString() ?? 'Sans nom',
+        phone: json['phone']?.toString() ?? '',
         contractType: TeacherContractType
             .values[json['contractType'] as int? ?? 0],
         fixedAmount: (json['fixedAmount'] as num?)?.toDouble() ?? 0.0,

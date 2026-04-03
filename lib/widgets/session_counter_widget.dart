@@ -50,7 +50,6 @@ class SessionCounterWidget extends StatelessWidget {
         Row(
           children: List.generate(total, (index) {
             final isFilled = index < displayCurrent;
-            final isOverflow = current > total && index == total - 1;
             return Expanded(
               child: AnimatedContainer(
                 duration: Duration(milliseconds: 300 + (index * 100)),
