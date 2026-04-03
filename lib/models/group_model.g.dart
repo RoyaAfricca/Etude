@@ -28,15 +28,21 @@ class GroupAdapter extends TypeAdapter<Group> {
       grade: fields[8] == null ? '' : fields[8] as String?,
       regularSlots: (fields[9] as List?)?.cast<ScheduleSlot>(),
       holidaySlots: (fields[10] as List?)?.cast<ScheduleSlot>(),
+      lastModifiedAt: fields[11] as DateTime?,
+      isLocalOnly: fields[12] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, Group obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(13)
       ..writeByte(0)
       ..write(obj.id)
+      ..writeByte(11)
+      ..write(obj.lastModifiedAt)
+      ..writeByte(12)
+      ..write(obj.isLocalOnly)
       ..writeByte(1)
       ..write(obj.name)
       ..writeByte(2)

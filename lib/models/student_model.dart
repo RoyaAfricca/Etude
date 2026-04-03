@@ -16,6 +16,12 @@ class Student extends HiveObject {
   @HiveField(0)
   String id;
 
+  @HiveField(14)
+  DateTime? lastModifiedAt;
+
+  @HiveField(15)
+  bool isLocalOnly;
+
   @HiveField(1)
   String name;
 
@@ -71,6 +77,8 @@ class Student extends HiveObject {
     this.email = '',
     this.originSchool = '',
     this.paymentMode = kPaymentModeCycle,
+    this.lastModifiedAt,
+    this.isLocalOnly = true,
   })  : attendances = attendances ?? [],
         payments = payments ?? [];
 

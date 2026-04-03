@@ -11,6 +11,7 @@ import '../models/payment_model.dart';
 import '../models/student_status.dart';
 import '../services/student_service.dart';
 import '../services/center_service.dart';
+import '../services/sync_service.dart';
 import '../l10n/app_localizations.dart';
 import 'dart:async';
 
@@ -159,6 +160,8 @@ class AppProvider extends ChangeNotifier {
       grade: grade,
       regularSlots: regularSlots,
       holidaySlots: holidaySlots,
+      isLocalOnly: true,
+      lastModifiedAt: DateTime.now(),
     );
     await addGroupObj(group);
   }
@@ -186,6 +189,8 @@ class AppProvider extends ChangeNotifier {
     _groups[index].roomName = roomName;
     if (level != null) _groups[index].level = level;
     if (grade != null) _groups[index].grade = grade;
+    _groups[index].isLocalOnly = true;
+    _groups[index].lastModifiedAt = DateTime.now();
 
     final box = Hive.box<Group>('groups');
     await box.put(id, _groups[index]);
@@ -269,6 +274,8 @@ class AppProvider extends ChangeNotifier {
       originSchool: originSchool,
       sessionsSincePayment: sessionsSincePayment,
       paymentMode: paymentMode,
+      isLocalOnly: true,
+      lastModifiedAt: DateTime.now(),
     );
     await addStudentObj(student, enrollmentFeeAmount: enrollmentFeeAmount);
   }
@@ -288,8 +295,11 @@ class AppProvider extends ChangeNotifier {
       default:
         _students[index].pricePerCycle = price;
     }
+    _students[index].isLocalOnly = true;
+    _students[index].lastModifiedAt = DateTime.now();
     final box = Hive.box<Student>('students');
     await box.put(studentId, _students[index]);
+    SyncService().syncData();
     notifyListeners();
   }
 
@@ -317,6 +327,7 @@ class AppProvider extends ChangeNotifier {
         await groupBox.put(student.groupId, _groups[groupIndex]);
       }
     }
+    SyncService().syncData();
     notifyListeners();
   }
 
@@ -332,6 +343,7 @@ class AppProvider extends ChangeNotifier {
     final box = Hive.box<Student>('students');
     await box.delete(id);
     _students.removeWhere((s) => s.id == id);
+    SyncService().syncData();
     notifyListeners();
   }
 
@@ -341,6 +353,8 @@ class AppProvider extends ChangeNotifier {
     if (index == -1) return;
     _students[index].sessionsSincePayment++;
     _students[index].attendances.add(DateTime.now());
+    _students[index].isLocalOnly = true;
+    _students[index].lastModifiedAt = DateTime.now();
     final box = Hive.box<Student>('students');
     await box.put(studentId, _students[index]);
     notifyListeners();
@@ -367,8 +381,11 @@ class AppProvider extends ChangeNotifier {
     for (final student in groupStudents) {
       student.sessionsSincePayment++;
       student.attendances.add(DateTime.now());
+      student.isLocalOnly = true;
+      student.lastModifiedAt = DateTime.now();
       await box.put(student.id, student);
     }
+    SyncService().syncData();
     notifyListeners();
   }
 
@@ -428,11 +445,16 @@ class AppProvider extends ChangeNotifier {
       date: DateTime.now(),
       amount: amount,
       sessionsCount: sessionsCount,
+      isLocalOnly: true,
+      lastModifiedAt: DateTime.now(),
     ));
+
+    student.isLocalOnly = true;
+    student.lastModifiedAt = DateTime.now();
 
     final box = Hive.box<Student>('students');
     await box.put(studentId, student);
-
+    SyncService().syncData();
     notifyListeners();
   }
 

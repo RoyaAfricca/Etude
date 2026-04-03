@@ -21,21 +21,30 @@ class PaymentAdapter extends TypeAdapter<Payment> {
       date: fields[1] as DateTime,
       amount: fields[2] as double,
       sessionsCount: fields[3] as int,
+      paymentType: fields[4] as String,
+      lastModifiedAt: fields[5] as DateTime?,
+      isLocalOnly: fields[6] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, Payment obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(7)
       ..writeByte(0)
       ..write(obj.id)
+      ..writeByte(5)
+      ..write(obj.lastModifiedAt)
+      ..writeByte(6)
+      ..write(obj.isLocalOnly)
       ..writeByte(1)
       ..write(obj.date)
       ..writeByte(2)
       ..write(obj.amount)
       ..writeByte(3)
-      ..write(obj.sessionsCount);
+      ..write(obj.sessionsCount)
+      ..writeByte(4)
+      ..write(obj.paymentType);
   }
 
   @override

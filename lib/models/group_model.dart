@@ -8,6 +8,12 @@ class Group extends HiveObject {
   @HiveField(0)
   String id;
 
+  @HiveField(11)
+  DateTime? lastModifiedAt;
+
+  @HiveField(12)
+  bool isLocalOnly;
+
   @HiveField(1)
   String name;
 
@@ -50,6 +56,8 @@ class Group extends HiveObject {
     this.grade,
     List<ScheduleSlot>? regularSlots,
     List<ScheduleSlot>? holidaySlots,
+    this.lastModifiedAt,
+    this.isLocalOnly = true,
   })  : studentIds = studentIds ?? [],
         regularSlots = regularSlots ?? [],
         holidaySlots = holidaySlots ?? [];

@@ -14,8 +14,8 @@ Write-Host "[1/3] Nettoyage et récupération des dépendances..." -ForegroundCo
 & $FLUTTER clean
 & $FLUTTER pub get
 
-Write-Host "`n[2/3] Compilation APK Release Optimisée (arm64 + Obfuscation)..." -ForegroundColor Yellow
-& $FLUTTER build apk --release --target-platform android-arm64 --obfuscate --split-debug-info=build/app/outputs/symbols
+Write-Host "`n[2/3] Compilation APK Universel (arm, arm64, x64 + Obfuscation)..." -ForegroundColor Yellow
+& $FLUTTER build apk --release --target-platform android-arm,android-arm64,android-x64 --obfuscate --split-debug-info=build/app/outputs/symbols
 
 Write-Host "`n[3/3] Copie de l'APK vers Adel, final, et website..." -ForegroundColor Yellow
 $OUT_DIR = "$PROJECT\build\app\outputs\flutter-apk\app-release.apk"

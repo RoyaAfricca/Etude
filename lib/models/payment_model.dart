@@ -7,6 +7,12 @@ class Payment {
   @HiveField(0)
   String id;
 
+  @HiveField(5)
+  DateTime? lastModifiedAt;
+
+  @HiveField(6)
+  bool isLocalOnly;
+
   @HiveField(1)
   DateTime date;
 
@@ -25,5 +31,7 @@ class Payment {
     required this.amount,
     this.sessionsCount = 4,
     this.paymentType = 'sessions',
+    this.lastModifiedAt,
+    this.isLocalOnly = true,
   });
 }

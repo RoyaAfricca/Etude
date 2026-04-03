@@ -21,6 +21,7 @@ import 'screens/login_screen.dart';
 import 'screens/activation_screen.dart';
 import 'services/activation_service.dart';
 import 'services/center_service.dart';
+import 'services/sync_service.dart';
 import 'theme/app_theme.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -71,6 +72,9 @@ void main() async {
   await Hive.openBox<Student>('students');
   await Hive.openBox<Group>('groups');
   await Hive.openBox('settings');
+
+  // Initialize Sync Service (Offline-First)
+  SyncService().init();
 
 
   // Set status bar style (mobile only)
