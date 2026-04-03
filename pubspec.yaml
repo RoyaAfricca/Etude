@@ -63,7 +63,7 @@ msix_config:
 flutter_launcher_icons:
   image_path: "assets/app_icon.png"
   android: true
-  ios: false
+  ios: true
   windows:
     generate: true
     image_path: "assets/app_icon.png"
