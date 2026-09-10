@@ -51,12 +51,13 @@ flutter:
 
 msix_config:
   display_name: Étude
-  publisher_display_name: RoyaAfricca
+  publisher_display_name: Soltani
   identity_name: com.royaafricca.etude
+  publisher: CN=750D9E32-9413-4BB5-8E7D-48AC93A265FB
   logo_path: windows\runner\resources\app_icon.ico
   desktop_shortcut: true
   start_menu_shortcut: true
-  store: false
+  store: true
   output_path: website
   output_name: application_etude_windows
   languages: fr-fr
