@@ -50,9 +50,9 @@ flutter:
     - assets/
 
 msix_config:
-  display_name: Étude
+  display_name: Gestion Etude
   publisher_display_name: Soltani
-  identity_name: com.royaafricca.etude
+  identity_name: Soltani.GestionEtude
   publisher: CN=750D9E32-9413-4BB5-8E7D-48AC93A265FB
   logo_path: windows\runner\resources\app_icon.ico
   desktop_shortcut: true
