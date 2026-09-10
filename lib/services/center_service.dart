@@ -38,6 +38,8 @@ class Teacher {
   final String id;
   String name;
   String phone;
+  String email;
+  String subject;
   TeacherContractType contractType;
   double fixedAmount;    // Pour salarie ou locateur
   double percentage;     // Pour pourcentage (0-100)
@@ -46,6 +48,8 @@ class Teacher {
     required this.id,
     required this.name,
     this.phone = '',
+    this.email = '',
+    this.subject = '',
     this.contractType = TeacherContractType.pourcentage,
     this.fixedAmount = 0.0,
     this.percentage = 50.0,
@@ -83,6 +87,8 @@ class Teacher {
         'id': id,
         'name': name,
         'phone': phone,
+        'email': email,
+        'subject': subject,
         'contractType': contractType.index,
         'fixedAmount': fixedAmount,
         'percentage': percentage,
@@ -92,6 +98,8 @@ class Teacher {
         id: json['id']?.toString() ?? '',
         name: json['name']?.toString() ?? 'Sans nom',
         phone: json['phone']?.toString() ?? '',
+        email: json['email']?.toString() ?? '',
+        subject: json['subject']?.toString() ?? '',
         contractType: TeacherContractType
             .values[json['contractType'] as int? ?? 0],
         fixedAmount: (json['fixedAmount'] as num?)?.toDouble() ?? 0.0,

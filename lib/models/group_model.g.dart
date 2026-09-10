@@ -29,7 +29,7 @@ class GroupAdapter extends TypeAdapter<Group> {
       regularSlots: (fields[9] as List?)?.cast<ScheduleSlot>(),
       holidaySlots: (fields[10] as List?)?.cast<ScheduleSlot>(),
       lastModifiedAt: fields[11] as DateTime?,
-      isLocalOnly: fields[12] as bool,
+      isLocalOnly: fields[12] == null ? true : fields[12] as bool,
     );
   }
 

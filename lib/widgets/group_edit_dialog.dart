@@ -29,9 +29,9 @@ class GroupEditDialog {
       'Secondaire': ['1ère', '2ème', '3ème', '4ème (Bac)'],
     };
     final subjectsMap = {
-      'Primaire': ['Arabe', 'Français', 'Anglais', 'Sciences (علوم)'],
-      'Collège': ['Arabe', 'Anglais', 'Français', 'Maths', 'Technique', 'Sciences (علوم)', 'Physique'],
-      'Secondaire': ['Maths', 'Français', 'Anglais', 'Arabe', 'Physique', 'Sciences', 'Économie', 'Gestion', 'Informatique', 'Électricité', 'Mécanique', 'Espagnol', 'Russe', 'Allemand', 'Chinois', 'Italien'],
+      'Primaire': ['Arabe', 'Français', 'Anglais', 'Sciences (علوم)', 'Informatique', 'Informatique 1', 'Informatique 2', 'Informatique 3', 'TIC', 'Programation'],
+      'Collège': ['Arabe', 'Anglais', 'Français', 'Maths', 'Technique', 'Sciences (علوم)', 'Physique', 'Informatique', 'Informatique 1', 'Informatique 2', 'Informatique 3', 'TIC', 'Programation'],
+      'Secondaire': ['Maths', 'Français', 'Anglais', 'Arabe', 'Physique', 'Sciences', 'Économie', 'Gestion', 'Informatique', 'Informatique 1', 'Informatique 2', 'Informatique 3', 'TIC', 'Programation', 'Électricité', 'Mécanique', 'Espagnol', 'Russe', 'Allemand', 'Chinois', 'Italien'],
     };
 
     // Safety check: ensure current values exist in predefined lists
@@ -67,7 +67,9 @@ class GroupEditDialog {
             // Deduplicate teacher items to avoid "Duplicate items" crash
             final teacherItems = <String, String>{};
             for (var t in teachers) {
-              if (t.id.isNotEmpty) teacherItems[t.id] = t.name;
+              if (t.id.isNotEmpty) {
+                teacherItems[t.id] = t.subject.isNotEmpty ? '${t.name} (${t.subject})' : t.name;
+              }
             }
 
             // Deduplicate room items

@@ -11,7 +11,7 @@ class Group extends HiveObject {
   @HiveField(11)
   DateTime? lastModifiedAt;
 
-  @HiveField(12)
+  @HiveField(12, defaultValue: true)
   bool isLocalOnly;
 
   @HiveField(1)

@@ -109,12 +109,40 @@ class _CenterSettingsScreenState extends State<CenterSettingsScreen>
   Future<void> _addOrEditTeacher({Teacher? existing}) async {
     final nameCtrl = TextEditingController(text: existing?.name ?? '');
     final phoneCtrl = TextEditingController(text: existing?.phone ?? '');
+    final emailCtrl = TextEditingController(text: existing?.email ?? '');
+    String? selectedSubject = (existing?.subject.isNotEmpty ?? false) ? existing?.subject : null;
     TeacherContractType contractType =
         existing?.contractType ?? TeacherContractType.pourcentage;
     final fixedCtrl = TextEditingController(
         text: existing?.fixedAmount.toStringAsFixed(0) ?? '');
     final pctCtrl = TextEditingController(
         text: existing?.percentage.toStringAsFixed(0) ?? '50');
+
+    final allSubjects = [
+      'Arabe',
+      'Français',
+      'Anglais',
+      'Maths',
+      'Physique',
+      'Sciences',
+      'Sciences (علوم)',
+      'Informatique',
+      'Informatique 1',
+      'Informatique 2',
+      'Informatique 3',
+      'TIC',
+      'Programation',
+      'Technique',
+      'Économie',
+      'Gestion',
+      'Électricité',
+      'Mécanique',
+      'Espagnol',
+      'Russe',
+      'Allemand',
+      'Chinois',
+      'Italien',
+    ];
 
     await showDialog<bool>(
       context: context,
@@ -142,12 +170,46 @@ class _CenterSettingsScreenState extends State<CenterSettingsScreen>
                     style: const TextStyle(color: AppTheme.textPrimary),
                   ),
                   const SizedBox(height: 16),
+                  DropdownButtonFormField<String?>(
+                    value: (selectedSubject != null && allSubjects.contains(selectedSubject))
+                        ? selectedSubject
+                        : null,
+                    dropdownColor: AppTheme.surface,
+                    style: const TextStyle(color: AppTheme.textPrimary),
+                    decoration: const InputDecoration(
+                      labelText: 'Matière enseignée',
+                      prefixIcon: Icon(Icons.menu_book_rounded),
+                    ),
+                    items: [
+                      const DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text('— Aucune matière —'),
+                      ),
+                      ...allSubjects.map((s) => DropdownMenuItem<String?>(
+                            value: s,
+                            child: Text(s,
+                                style: const TextStyle(color: AppTheme.textPrimary)),
+                          )),
+                    ],
+                    onChanged: (v) => setSt(() => selectedSubject = v),
+                  ),
+                  const SizedBox(height: 16),
                   TextField(
                     controller: phoneCtrl,
                     keyboardType: TextInputType.phone,
                     decoration: const InputDecoration(
                       labelText: 'Téléphone',
                       prefixIcon: Icon(Icons.phone_outlined),
+                    ),
+                    style: const TextStyle(color: AppTheme.textPrimary),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: emailCtrl,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      labelText: 'Email (optionnel)',
+                      prefixIcon: Icon(Icons.email_outlined),
                     ),
                     style: const TextStyle(color: AppTheme.textPrimary),
                   ),
@@ -290,6 +352,8 @@ class _CenterSettingsScreenState extends State<CenterSettingsScreen>
         id: existing?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
         name: nameCtrl.text.trim(),
         phone: phoneCtrl.text.trim(),
+        email: emailCtrl.text.trim(),
+        subject: selectedSubject ?? '',
         contractType: contractType,
         fixedAmount:
             double.tryParse(fixedCtrl.text) ?? existing?.fixedAmount ?? 0,
@@ -396,6 +460,29 @@ class _CenterSettingsScreenState extends State<CenterSettingsScreen>
               const Tab(icon: Icon(Icons.meeting_room), text: 'Salles'),
           ],
         ),
+      ),
+      floatingActionButton: AnimatedBuilder(
+        animation: _tabController,
+        builder: (context, _) {
+          if (_tabController.index == 1) {
+            return FloatingActionButton.extended(
+              onPressed: _addOrEditTeacher,
+              backgroundColor: AppTheme.primary,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.person_add_rounded),
+              label: const Text('Ajouter un enseignant'),
+            );
+          } else if (_tabController.index == 2 && context.read<AppProvider>().showRooms) {
+            return FloatingActionButton.extended(
+              onPressed: _addRoom,
+              backgroundColor: AppTheme.primary,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.add_home_work_rounded),
+              label: const Text('Ajouter une salle'),
+            );
+          }
+          return const SizedBox.shrink();
+        },
       ),
       body: TabBarView(
         controller: _tabController,
@@ -717,109 +804,89 @@ class _CenterSettingsScreenState extends State<CenterSettingsScreen>
   }
 
   Widget _buildTeachersTab() {
-    return Column(
-      children: [
-        Expanded(
-          child: _teachers.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.person_add_alt_1_outlined,
-                          size: 50, color: AppTheme.textMuted),
-                      const SizedBox(height: 16),
-                      Text('Aucun enseignant',
-                          style: GoogleFonts.outfit(
-                              fontSize: 16, color: AppTheme.textMuted)),
-                    ],
-                  ),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _teachers.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (_, i) {
-                    final t = _teachers[i];
-                    return _TeacherCard(
-                      teacher: t,
-                      onEdit: () => _addOrEditTeacher(existing: t),
-                      onDelete: () => _deleteTeacher(t),
-                    );
-                  },
-                ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
+    if (_teachers.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.person_add_alt_1_outlined,
+                size: 50, color: AppTheme.textMuted),
+            const SizedBox(height: 16),
+            Text('Aucun enseignant',
+                style: GoogleFonts.outfit(
+                    fontSize: 16, color: AppTheme.textMuted)),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
               icon: const Icon(Icons.person_add_rounded),
               label: const Text('Ajouter un enseignant'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primary,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),
               onPressed: _addOrEditTeacher,
             ),
-          ),
+          ],
         ),
-      ],
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 90),
+      itemCount: _teachers.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (_, i) {
+        final t = _teachers[i];
+        return _TeacherCard(
+          teacher: t,
+          onEdit: () => _addOrEditTeacher(existing: t),
+          onDelete: () => _deleteTeacher(t),
+        );
+      },
     );
   }
 
   Widget _buildRoomsTab() {
-    return Column(
-      children: [
-        Expanded(
-          child: _rooms.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.meeting_room_outlined,
-                          size: 50, color: AppTheme.textMuted),
-                      const SizedBox(height: 16),
-                      Text('Aucune salle enregistrée',
-                          style: GoogleFonts.outfit(
-                              fontSize: 16, color: AppTheme.textMuted)),
-                    ],
-                  ),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _rooms.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                  itemBuilder: (_, i) => _RoomTile(
-                    room: _rooms[i],
-                    onDelete: () async {
-                      setState(() => _rooms.removeAt(i));
-                      await _saveAllChanges();
-                    },
-                  ),
-                ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
+    if (_rooms.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.meeting_room_outlined,
+                size: 50, color: AppTheme.textMuted),
+            const SizedBox(height: 16),
+            Text('Aucune salle enregistrée',
+                style: GoogleFonts.outfit(
+                    fontSize: 16, color: AppTheme.textMuted)),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
               icon: const Icon(Icons.add_home_work_rounded),
               label: const Text('Ajouter une salle'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primary,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),
               onPressed: _addRoom,
             ),
-          ),
+          ],
         ),
-      ],
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 90),
+      itemCount: _rooms.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder: (_, i) => _RoomTile(
+        room: _rooms[i],
+        onDelete: () async {
+          setState(() => _rooms.removeAt(i));
+          await _saveAllChanges();
+        },
+      ),
     );
   }
 }
@@ -879,10 +946,32 @@ class _TeacherCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(teacher.name,
-                    style: GoogleFonts.outfit(
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.textPrimary)),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(teacher.name,
+                          style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.textPrimary)),
+                    ),
+                    if (teacher.subject.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primary.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          teacher.subject,
+                          style: GoogleFonts.outfit(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.primary,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
                 if (teacher.phone.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
@@ -892,6 +981,21 @@ class _TeacherCard extends StatelessWidget {
                             size: 11, color: AppTheme.textSecondary),
                         const SizedBox(width: 4),
                         Text(teacher.phone,
+                            style: GoogleFonts.outfit(
+                                fontSize: 11,
+                                color: AppTheme.textSecondary)),
+                      ],
+                    ),
+                  ),
+                if (teacher.email.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.email_outlined,
+                            size: 11, color: AppTheme.textSecondary),
+                        const SizedBox(width: 4),
+                        Text(teacher.email,
                             style: GoogleFonts.outfit(
                                 fontSize: 11,
                                 color: AppTheme.textSecondary)),

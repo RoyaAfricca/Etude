@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 import '../models/student_status.dart';
 import '../models/student_model.dart';
+import '../models/group_model.dart';
 import '../services/student_service.dart';
 import '../services/pdf_service.dart';
 import '../theme/app_theme.dart';
@@ -173,24 +174,6 @@ class StudentDetailScreen extends StatelessWidget {
                             Text(
                               student.email,
                               style: const TextStyle(
-                                color: AppTheme.textSecondary,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                      if (student.email.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.email_outlined,
-                                size: 14, color: AppTheme.textMuted),
-                            const SizedBox(width: 4),
-                            Text(
-                              student.email,
-                              style: TextStyle(
                                 color: AppTheme.textSecondary,
                                 fontSize: 13,
                               ),
@@ -548,6 +531,153 @@ class StudentDetailScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 24),
+
+                // ── All Registrations Section ──
+                Builder(
+                  builder: (context) {
+                    final allRegs = student.phone.trim().isNotEmpty
+                        ? provider.getRegistrationsByPhone(student.phone)
+                        : [student];
+
+                    return Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 24),
+                      padding: const EdgeInsets.all(20),
+                      decoration: AppTheme.glassCard,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.style_rounded, color: AppTheme.primary, size: 20),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Inscriptions & États',
+                                style: TextStyle(
+                                  color: AppTheme.textPrimary,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const Spacer(),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primary.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  '${allRegs.length} groupe(s)',
+                                  style: const TextStyle(
+                                    color: AppTheme.primary,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          ...allRegs.map((reg) {
+                            final regGroup = provider.groups.firstWhere(
+                              (g) => g.id == reg.groupId,
+                              orElse: () => Group(id: '', name: 'Sans groupe', subject: ''),
+                            );
+                            final regStatus = StudentService.computeStatus(reg);
+                            final isCurrent = reg.id == student.id;
+
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 10),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: isCurrent
+                                    ? AppTheme.primary.withOpacity(0.05)
+                                    : AppTheme.surfaceLight,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: isCurrent
+                                      ? AppTheme.primary.withOpacity(0.3)
+                                      : AppTheme.cardBorder,
+                                  width: isCurrent ? 1.5 : 1,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Text(
+                                              '${regGroup.subject} - ${regGroup.name}',
+                                              style: TextStyle(
+                                                color: AppTheme.textPrimary,
+                                                fontWeight: isCurrent ? FontWeight.bold : FontWeight.w600,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                            if (isCurrent) ...[
+                                              const SizedBox(width: 8),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: AppTheme.primary.withOpacity(0.2),
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
+                                                child: const Text(
+                                                  'Actuel',
+                                                  style: TextStyle(
+                                                    color: AppTheme.primary,
+                                                    fontSize: 9,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Séances à payer : ${reg.sessionsSincePayment} | ${reg.paymentModeLabel}',
+                                          style: const TextStyle(
+                                            color: AppTheme.textSecondary,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  StatusBadge(status: regStatus, large: false),
+                                  if (!isCurrent) ...[
+                                    const SizedBox(width: 8),
+                                    SizedBox(
+                                      width: 32,
+                                      height: 32,
+                                      child: IconButton(
+                                        padding: EdgeInsets.zero,
+                                        icon: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppTheme.primary),
+                                        onPressed: () {
+                                          Navigator.pushReplacement(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => StudentDetailScreen(studentId: reg.id),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    );
+                  }
+                ),
 
                 // ── Payment Info ──
                 Container(

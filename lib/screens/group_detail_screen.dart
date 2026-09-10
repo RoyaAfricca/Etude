@@ -502,8 +502,9 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
     final phoneCtl = TextEditingController();
     final emailCtl = TextEditingController();
     final schoolCtl = TextEditingController();
-    final priceCtl = TextEditingController(text: '200');
+    final priceCtl = TextEditingController(text: '100');
     final enrollmentFee = provider.enrollmentFee;
+    final feeCtl = TextEditingController(text: enrollmentFee > 0 ? enrollmentFee.toStringAsFixed(0) : '0');
     bool chargeEnrollmentFee = enrollmentFee > 0;
     bool feeAutoExempted = false;
     String selectedPaymentMode = kPaymentModeCycle;
@@ -518,9 +519,9 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
     }
     String defaultPriceFor(String mode) {
       switch (mode) {
-        case kPaymentModeMonthly:    return '200';
-        case kPaymentModePerSession: return '50';
-        default:                     return '200';
+        case kPaymentModeMonthly:    return '100';
+        case kPaymentModePerSession: return '30';
+        default:                     return '100';
       }
     }
 
@@ -555,15 +556,57 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                const Text(
-                  'Nouvel élève',
-                  style: TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Nouvel élève',
+                      style: TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () => _showSelectExistingStudentDialog(
+                        context,
+                        provider,
+                        (selectedStudent) {
+                          nameCtl.text = selectedStudent.name;
+                          phoneCtl.text = selectedStudent.phone;
+                          emailCtl.text = selectedStudent.email;
+                          schoolCtl.text = selectedStudent.originSchool;
+                          
+                          if (enrollmentFee > 0) {
+                            final val = selectedStudent.phone;
+                            final nums = PhoneValidator.cleanAndSplit(val);
+                            bool alreadyPaid = false;
+                            for (var n in nums) {
+                              if (provider.hasPaidEnrollmentFee(n)) {
+                                alreadyPaid = true;
+                                break;
+                              }
+                            }
+                            setSt(() {
+                              if (alreadyPaid) {
+                                chargeEnrollmentFee = false;
+                                feeAutoExempted = true;
+                              } else {
+                                chargeEnrollmentFee = enrollmentFee > 0;
+                                feeAutoExempted = false;
+                              }
+                            });
+                          } else {
+                            setSt(() {});
+                          }
+                        },
+                      ),
+                      icon: const Icon(Icons.download_rounded, size: 18),
+                      label: const Text('Élève existant'),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
                 TextField(
                   controller: nameCtl,
                   autofocus: true,
@@ -705,7 +748,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                   const SizedBox(height: 16),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
+                        horizontal: 14, vertical: 12),
                     decoration: BoxDecoration(
                       color: chargeEnrollmentFee
                           ? AppTheme.primary.withOpacity(0.1)
@@ -717,19 +760,19 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                             : AppTheme.cardBorder,
                       ),
                     ),
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.confirmation_number_outlined,
-                            color: chargeEnrollmentFee
-                                ? AppTheme.primary
-                                : AppTheme.textMuted,
-                            size: 20),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
+                        Row(
+                          children: [
+                            Icon(Icons.confirmation_number_outlined,
+                                color: chargeEnrollmentFee
+                                    ? AppTheme.primary
+                                    : AppTheme.textMuted,
+                                size: 20),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
                                 'Frais d\'inscription',
                                 style: TextStyle(
                                   color: chargeEnrollmentFee
@@ -739,24 +782,29 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                                   fontSize: 14,
                                 ),
                               ),
-                              Text(
-                                '${enrollmentFee.toStringAsFixed(0)} DT',
-                                style: TextStyle(
-                                  color: chargeEnrollmentFee
-                                      ? AppTheme.primary
-                                      : AppTheme.textMuted,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
+                            ),
+                            Switch(
+                              value: chargeEnrollmentFee,
+                              activeColor: AppTheme.primary,
+                              onChanged: (v) =>
+                                  setSt(() => chargeEnrollmentFee = v),
+                            ),
+                          ],
+                        ),
+                        if (chargeEnrollmentFee) ...[
+                          const SizedBox(height: 10),
+                          TextField(
+                            controller: feeCtl,
+                            keyboardType: TextInputType.number,
+                            style: const TextStyle(color: AppTheme.textPrimary),
+                            decoration: const InputDecoration(
+                              labelText: 'Montant des frais d\'inscription',
+                              prefixIcon: Icon(Icons.payments_outlined, size: 18),
+                              suffixText: 'DT',
+                              isDense: true,
+                            ),
                           ),
-                        ),
-                        Switch(
-                          value: chargeEnrollmentFee,
-                          activeColor: AppTheme.primary,
-                          onChanged: (v) =>
-                              setSt(() => chargeEnrollmentFee = v),
-                        ),
+                        ],
                       ],
                     ),
                   ),
@@ -780,24 +828,25 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                         return;
                       }
 
-                      final price = double.tryParse(priceCtl.text) ?? 200;
+                      final price = double.tryParse(priceCtl.text) ?? 100;
+                      final finalEnrollmentFee = double.tryParse(feeCtl.text) ?? enrollmentFee;
                       provider.addStudent(
                         name,
                         phone,
                         widget.groupId,
-                        selectedPaymentMode == kPaymentModeCycle ? price : 200,
+                        selectedPaymentMode == kPaymentModeCycle ? price : 100,
                         enrollmentFeeAmount:
-                            chargeEnrollmentFee ? enrollmentFee : 0.0,
+                            chargeEnrollmentFee ? finalEnrollmentFee : 0.0,
                         email: emailCtl.text.trim(),
                         originSchool: schoolCtl.text.trim(),
                         paymentMode: selectedPaymentMode,
                         pricePerMonth: selectedPaymentMode == kPaymentModeMonthly
                             ? price
-                            : 200,
+                            : 100,
                         pricePerSession:
                             selectedPaymentMode == kPaymentModePerSession
                                 ? price
-                                : 50,
+                                : 30,
                       );
                       Navigator.pop(ctx);
                     },
@@ -999,6 +1048,272 @@ extension on _GroupDetailScreenState {
     }
     const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
     return days[day - 1];
+  }
+
+  void _showSelectExistingStudentDialog(
+      BuildContext context, AppProvider provider, Function(Student) onSelected) {
+    final seen = <String>{};
+    final uniqueStudents = <Student>[];
+    for (final s in provider.students) {
+      final key = '${s.name.toLowerCase().trim()}_${s.phone.trim()}';
+      if (!seen.contains(key)) {
+        seen.add(key);
+        uniqueStudents.add(s);
+      }
+    }
+
+    final searchCtl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (dialogCtx, setSt) {
+          final query = searchCtl.text.toLowerCase().trim();
+          final filtered = uniqueStudents.where((s) {
+            if (query.isEmpty) return true;
+            return s.name.toLowerCase().contains(query) || s.phone.contains(query);
+          }).toList();
+
+          return AlertDialog(
+            backgroundColor: AppTheme.surface,
+            title: const Text('Sélectionner un élève existant'),
+            content: SizedBox(
+              width: double.maxFinite,
+              height: 400,
+              child: Column(
+                children: [
+                  TextField(
+                    controller: searchCtl,
+                    style: const TextStyle(color: AppTheme.textPrimary),
+                    decoration: const InputDecoration(
+                      hintText: 'Rechercher par nom ou numéro...',
+                      prefixIcon: Icon(Icons.search, size: 20),
+                    ),
+                    onChanged: (_) => setSt(() {}),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: filtered.isEmpty
+                        ? const Center(
+                            child: Text('Aucun élève trouvé',
+                                style: TextStyle(color: AppTheme.textSecondary)))
+                        : ListView.builder(
+                            itemCount: filtered.length,
+                            itemBuilder: (ctx, i) {
+                              final student = filtered[i];
+                              return ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: AppTheme.primary.withOpacity(0.15),
+                                  child: Text(
+                                    student.name.isNotEmpty
+                                        ? student.name[0].toUpperCase()
+                                        : '?',
+                                    style: const TextStyle(color: AppTheme.primary),
+                                  ),
+                                ),
+                                title: Text(student.name,
+                                    style: const TextStyle(color: AppTheme.textPrimary)),
+                                subtitle: Text(student.phone,
+                                    style: const TextStyle(color: AppTheme.textSecondary)),
+                                onTap: () {
+                                  _showConfirmAutomaticAddDialog(
+                                    context,
+                                    dialogCtx,
+                                    provider,
+                                    student,
+                                    onSelected,
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogCtx),
+                child: const Text('Annuler'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _showConfirmAutomaticAddDialog(
+      BuildContext mainCtx,
+      BuildContext dialogCtx,
+      AppProvider provider,
+      Student student,
+      Function(Student) onSelected) {
+    String selectedMode = student.paymentMode;
+    double defaultPrice = student.effectivePrice;
+    final priceCtl = TextEditingController(text: defaultPrice.toStringAsFixed(0));
+    bool chargeEnrollmentFee = false;
+
+    showDialog(
+      context: dialogCtx,
+      builder: (confirmCtx) => StatefulBuilder(
+        builder: (confirmCtx, setSt) => AlertDialog(
+          backgroundColor: AppTheme.surface,
+          title: Text('Ajouter ${student.name} ?', style: const TextStyle(color: AppTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Inscrire automatiquement ${student.name} au groupe ? Ses informations seront copiées.',
+                style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+              ),
+              const SizedBox(height: 16),
+              const Text('Mode de paiement :', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  _PayModeChipConfirm(
+                    label: '4 Séances',
+                    selected: selectedMode == kPaymentModeCycle,
+                    onTap: () => setSt(() {
+                      selectedMode = kPaymentModeCycle;
+                      priceCtl.text = '200';
+                    }),
+                  ),
+                  const SizedBox(width: 8),
+                  _PayModeChipConfirm(
+                    label: 'Mensuel',
+                    selected: selectedMode == kPaymentModeMonthly,
+                    onTap: () => setSt(() {
+                      selectedMode = kPaymentModeMonthly;
+                      priceCtl.text = '200';
+                    }),
+                  ),
+                  const SizedBox(width: 8),
+                  _PayModeChipConfirm(
+                    label: 'Par séance',
+                    selected: selectedMode == kPaymentModePerSession,
+                    onTap: () => setSt(() {
+                      selectedMode = kPaymentModePerSession;
+                      priceCtl.text = '50';
+                    }),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: priceCtl,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(color: AppTheme.textPrimary),
+                decoration: InputDecoration(
+                  labelText: selectedMode == kPaymentModeMonthly
+                      ? 'Prix mensuel'
+                      : selectedMode == kPaymentModePerSession
+                          ? 'Prix par séance'
+                          : 'Prix par cycle',
+                  suffixText: 'DT',
+                ),
+              ),
+              if (provider.enrollmentFee > 0) ...[
+                const SizedBox(height: 12),
+                SwitchListTile(
+                  title: const Text('Frais d\'inscription', style: TextStyle(color: AppTheme.textPrimary, fontSize: 13)),
+                  subtitle: Text('${provider.enrollmentFee.toStringAsFixed(0)} DT (exempté par défaut)', style: const TextStyle(color: AppTheme.textMuted, fontSize: 11)),
+                  value: chargeEnrollmentFee,
+                  activeColor: AppTheme.primary,
+                  contentPadding: EdgeInsets.zero,
+                  onChanged: (v) => setSt(() => chargeEnrollmentFee = v),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                onSelected(student);
+                Navigator.pop(confirmCtx);
+                Navigator.pop(dialogCtx);
+              },
+              child: const Text('Remplir manuellement'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final price = double.tryParse(priceCtl.text) ?? 200;
+                await provider.addStudent(
+                  student.name,
+                  student.phone,
+                  widget.groupId,
+                  selectedMode == kPaymentModeCycle ? price : 200,
+                  enrollmentFeeAmount: chargeEnrollmentFee ? provider.enrollmentFee : 0.0,
+                  email: student.email,
+                  originSchool: student.originSchool,
+                  paymentMode: selectedMode,
+                  pricePerMonth: selectedMode == kPaymentModeMonthly ? price : 200,
+                  pricePerSession: selectedMode == kPaymentModePerSession ? price : 50,
+                );
+
+                Navigator.pop(confirmCtx);
+                Navigator.pop(dialogCtx);
+                Navigator.pop(mainCtx); // Fermer le bottom sheet de création d'élève
+
+                ScaffoldMessenger.of(mainCtx).showSnackBar(
+                  SnackBar(
+                    content: Text('✅ ${student.name} inscrit automatiquement !'),
+                    backgroundColor: AppTheme.success,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.white),
+              child: const Text('Ajouter automatiquement'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PayModeChipConfirm extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _PayModeChipConfirm({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: selected ? AppTheme.primary.withOpacity(0.15) : AppTheme.surfaceLight,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: selected ? AppTheme.primary : AppTheme.cardBorder,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+              color: selected ? AppTheme.primary : AppTheme.textSecondary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    );
   }
 }
 

@@ -15,6 +15,7 @@ import 'login_screen.dart';
 import 'teacher_reports_screen.dart';
 import '../l10n/app_localizations.dart';
 import 'room_occupation_screen.dart';
+import 'student_search_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -125,6 +126,26 @@ class DashboardScreen extends StatelessWidget {
                       },
                     );
                   }),
+                  // Student Search button
+                  Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.search_rounded, color: AppTheme.primary),
+                      tooltip: 'Rechercher un élève',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const StudentSearchScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                   // Mode Vacances Toggle
                   _buildHolidayToggle(context, provider),
                   // Reset button

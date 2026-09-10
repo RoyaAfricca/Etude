@@ -15,8 +15,8 @@ class SyncService {
   bool _isSyncing = false;
 
   void init() {
-    Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
-      if (result != ConnectivityResult.none) {
+    Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) {
+      if (results.isNotEmpty && results.first != ConnectivityResult.none) {
         syncData();
       }
     });
