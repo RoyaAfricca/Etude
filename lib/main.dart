@@ -115,16 +115,71 @@ class EtudeApp extends StatefulWidget {
 
 class _EtudeAppState extends State<EtudeApp> {
   Timer? _timer;
-  final _activationService = ActivationService();
+  late final ActivationService _activationService;
   bool _isEnforcingActivation = false;
+  Widget? _startScreen;
 
   @override
   void initState() {
     super.initState();
+    // Calculé une seule fois au démarrage
+    _startScreen = _safeGetStartScreen();
+    _activationService = ActivationService();
     _startTrialTimer();
-    // No online checks in offline mode
   }
 
+  Widget _safeGetStartScreen() {
+    try {
+      // Vérifier que la box settings est bien ouverte
+      if (!Hive.isBoxOpen('settings')) {
+        return _buildErrorScreen('Base de données non disponible');
+      }
+      final centerConfig = CenterConfigService();
+      final authService = AppAuthService();
+
+      if (!centerConfig.isModeConfigured || authService.mustChangePassword) {
+        return const OnboardingScreen();
+      }
+      if (Platform.isWindows) {
+        return const LoginScreen();
+      }
+      return const AuthScreen();
+    } catch (e) {
+      debugPrint('Error determining start screen: $e');
+      return const OnboardingScreen();
+    }
+  }
+
+  Widget _buildErrorScreen(String message) {
+    return Scaffold(
+      backgroundColor: AppTheme.background,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: AppTheme.warning, size: 64),
+              const SizedBox(height: 24),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppTheme.textPrimary, fontSize: 16),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => setState(() {
+                  _startScreen = _safeGetStartScreen();
+                }),
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
+                child: const Text('Réessayer', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   void _startTrialTimer() {
     _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
@@ -144,25 +199,6 @@ class _EtudeAppState extends State<EtudeApp> {
   void dispose() {
     _timer?.cancel();
     super.dispose();
-  }
-
-  Widget _getStartScreen() {
-    final centerConfig = CenterConfigService();
-    final authService = AppAuthService();
-
-    // Premier lancement ou configuration incomplète : 
-    // Si le mode n'est pas choisi OU si le mot de passe par défaut n'a pas été changé,
-    // on considère que l'onboarding n'est pas terminé.
-    if (!centerConfig.isModeConfigured || authService.mustChangePassword) {
-      return const OnboardingScreen();
-    }
-
-    // Windows : login + mot de passe
-    if (Platform.isWindows) {
-      return const LoginScreen();
-    }
-    // Android : biométrie / PIN du téléphone
-    return const AuthScreen();
   }
 
   @override
@@ -186,7 +222,7 @@ class _EtudeAppState extends State<EtudeApp> {
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-            home: _getStartScreen(),
+            home: _startScreen ?? const OnboardingScreen(),
           );
         },
       ),
