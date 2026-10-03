@@ -500,6 +500,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
   void _showAddStudentDialog(BuildContext context, AppProvider provider) {
     final nameCtl = TextEditingController();
     final phoneCtl = TextEditingController();
+    final parentPhoneCtl = TextEditingController();
     final emailCtl = TextEditingController();
     final schoolCtl = TextEditingController();
     final priceCtl = TextEditingController(text: '100');
@@ -574,6 +575,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                         (selectedStudent) {
                           nameCtl.text = selectedStudent.name;
                           phoneCtl.text = selectedStudent.phone;
+                          parentPhoneCtl.text = selectedStudent.parentPhone;
                           emailCtl.text = selectedStudent.email;
                           schoolCtl.text = selectedStudent.originSchool;
                           
@@ -623,7 +625,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                   keyboardType: TextInputType.phone,
                   style: const TextStyle(color: AppTheme.textPrimary),
                   decoration: const InputDecoration(
-                    labelText: 'Téléphone (optionnel)',
+                    labelText: 'Téléphone élève (optionnel)',
                     prefixIcon:
                         Icon(Icons.phone_outlined, color: AppTheme.primary),
                   ),
@@ -653,6 +655,17 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                     }
                     setSt(() {}); // Pour canCreate
                   },
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: parentPhoneCtl,
+                  keyboardType: TextInputType.phone,
+                  style: const TextStyle(color: AppTheme.textPrimary),
+                  decoration: const InputDecoration(
+                    labelText: 'Numéro Parent (optionnel)',
+                    prefixIcon:
+                        Icon(Icons.contact_phone_outlined, color: AppTheme.primary),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -818,12 +831,21 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                       final name = nameCtl.text.trim();
                       final phone = phoneCtl.text.trim();
                       final phonesList = PhoneValidator.cleanAndSplit(phone);
+                      final parentPhone = parentPhoneCtl.text.trim();
+                      final parentPhonesList = PhoneValidator.cleanAndSplit(parentPhone);
                       
                       if (name.isEmpty) return;
                       // Validation: si téléphone présent, il doit être valide (8 chiffres)
                       if (phone.isNotEmpty && !PhoneValidator.isValidTunisianList(phonesList)) {
                         ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(content: Text('Chaque numéro doit faire 8 chiffres (Tunisie)')),
+                          const SnackBar(content: Text('Chaque numéro de l\'élève doit faire 8 chiffres (Tunisie)')),
+                        );
+                        return;
+                      }
+
+                      if (parentPhone.isNotEmpty && !PhoneValidator.isValidTunisianList(parentPhonesList)) {
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          const SnackBar(content: Text('Le numéro du parent doit faire 8 chiffres (Tunisie)')),
                         );
                         return;
                       }
@@ -835,6 +857,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                         phone,
                         widget.groupId,
                         selectedPaymentMode == kPaymentModeCycle ? price : 100,
+                        parentPhone: parentPhone,
                         enrollmentFeeAmount:
                             chargeEnrollmentFee ? finalEnrollmentFee : 0.0,
                         email: emailCtl.text.trim(),
@@ -1112,8 +1135,13 @@ extension on _GroupDetailScreenState {
                                 ),
                                 title: Text(student.name,
                                     style: const TextStyle(color: AppTheme.textPrimary)),
-                                subtitle: Text(student.phone,
-                                    style: const TextStyle(color: AppTheme.textSecondary)),
+                                subtitle: Text(
+                                  [
+                                    if (student.phone.isNotEmpty) 'Élève: ${student.phone}',
+                                    if (student.parentPhone.isNotEmpty) 'Parent: ${student.parentPhone}',
+                                  ].join(' • '),
+                                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                                ),
                                 onTap: () {
                                   _showConfirmAutomaticAddDialog(
                                     context,
@@ -1244,6 +1272,7 @@ extension on _GroupDetailScreenState {
                   student.phone,
                   widget.groupId,
                   selectedMode == kPaymentModeCycle ? price : 200,
+                  parentPhone: student.parentPhone,
                   enrollmentFeeAmount: chargeEnrollmentFee ? provider.enrollmentFee : 0.0,
                   email: student.email,
                   originSchool: student.originSchool,

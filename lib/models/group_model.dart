@@ -61,4 +61,42 @@ class Group extends HiveObject {
   })  : studentIds = studentIds ?? [],
         regularSlots = regularSlots ?? [],
         holidaySlots = holidaySlots ?? [];
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'subject': subject,
+        'schedule': schedule,
+        'studentIds': studentIds,
+        'teacherId': teacherId,
+        'roomName': roomName,
+        'level': level,
+        'grade': grade,
+        'regularSlots': regularSlots.map((s) => s.toJson()).toList(),
+        'holidaySlots': holidaySlots.map((s) => s.toJson()).toList(),
+        'lastModifiedAt': lastModifiedAt?.toIso8601String(),
+        'isLocalOnly': isLocalOnly,
+      };
+
+  factory Group.fromJson(Map<String, dynamic> json) => Group(
+        id: json['id']?.toString() ?? '',
+        name: json['name']?.toString() ?? '',
+        subject: json['subject']?.toString() ?? '',
+        schedule: json['schedule']?.toString() ?? '',
+        studentIds: (json['studentIds'] as List?)?.cast<String>() ?? [],
+        teacherId: json['teacherId']?.toString(),
+        roomName: json['roomName']?.toString(),
+        level: json['level']?.toString(),
+        grade: json['grade']?.toString(),
+        regularSlots: (json['regularSlots'] as List?)
+            ?.map((s) => ScheduleSlot.fromJson(Map<String, dynamic>.from(s as Map)))
+            .toList(),
+        holidaySlots: (json['holidaySlots'] as List?)
+            ?.map((s) => ScheduleSlot.fromJson(Map<String, dynamic>.from(s as Map)))
+            .toList(),
+        lastModifiedAt: json['lastModifiedAt'] != null
+            ? DateTime.tryParse(json['lastModifiedAt'].toString())
+            : null,
+        isLocalOnly: json['isLocalOnly'] as bool? ?? true,
+      );
 }

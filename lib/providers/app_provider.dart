@@ -226,7 +226,12 @@ class AppProvider extends ChangeNotifier {
   // Helper for multi-subject students
   List<Student> getRegistrationsByPhone(String phone) {
     if (phone.trim().isEmpty) return [];
-    return _students.where((s) => s.phone.trim() == phone.trim()).toList();
+    final cleanP = phone.trim();
+    return _students
+        .where((s) =>
+            s.phone.trim() == cleanP ||
+            (s.parentPhone.isNotEmpty && s.parentPhone.trim() == cleanP))
+        .toList();
   }
 
   bool hasPaidEnrollmentFee(String phone) {
@@ -241,12 +246,16 @@ class AppProvider extends ChangeNotifier {
   }
 
   Future<void> updateStudent(
-      String id, String name, String phone, String email) async {
+      String id, String name, String phone, String email,
+      {String parentPhone = ''}) async {
     final index = _students.indexWhere((s) => s.id == id);
     if (index == -1) return;
     _students[index].name = name;
     _students[index].phone = phone;
+    _students[index].parentPhone = parentPhone;
     _students[index].email = email;
+    _students[index].lastModifiedAt = DateTime.now();
+    _students[index].isLocalOnly = true;
     final box = Hive.box<Student>('students');
     await box.put(id, _students[index]);
     notifyListeners();
@@ -255,7 +264,8 @@ class AppProvider extends ChangeNotifier {
   // ── Students ──
   Future<void> addStudent(
       String name, String phone, String groupId, double price,
-      {double enrollmentFeeAmount = 0.0,
+      {String parentPhone = '',
+      double enrollmentFeeAmount = 0.0,
       String email = '',
       String originSchool = '',
       int sessionsSincePayment = 0,
@@ -266,6 +276,7 @@ class AppProvider extends ChangeNotifier {
       id: _uuid.v4(),
       name: name,
       phone: phone,
+      parentPhone: parentPhone,
       groupId: groupId,
       pricePerCycle: price,
       pricePerMonth: pricePerMonth,

@@ -28,6 +28,9 @@ class Student extends HiveObject {
   @HiveField(2)
   String phone;
 
+  @HiveField(16, defaultValue: '')
+  String parentPhone;
+
   @HiveField(3)
   int sessionsSincePayment;
 
@@ -66,6 +69,7 @@ class Student extends HiveObject {
     required this.id,
     required this.name,
     this.phone = '',
+    this.parentPhone = '',
     this.sessionsSincePayment = 0,
     this.pricePerCycle = 100.0,
     this.pricePerMonth = 100.0,
@@ -81,6 +85,57 @@ class Student extends HiveObject {
     this.isLocalOnly = true,
   })  : attendances = attendances ?? [],
         payments = payments ?? [];
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'phone': phone,
+        'parentPhone': parentPhone,
+        'sessionsSincePayment': sessionsSincePayment,
+        'pricePerCycle': pricePerCycle,
+        'pricePerMonth': pricePerMonth,
+        'pricePerSession': pricePerSession,
+        'monthlyExpiry': monthlyExpiry?.toIso8601String(),
+        'attendances': attendances.map((d) => d.toIso8601String()).toList(),
+        'payments': payments.map((p) => p.toJson()).toList(),
+        'groupId': groupId,
+        'email': email,
+        'originSchool': originSchool,
+        'paymentMode': paymentMode,
+        'lastModifiedAt': lastModifiedAt?.toIso8601String(),
+        'isLocalOnly': isLocalOnly,
+      };
+
+  factory Student.fromJson(Map<String, dynamic> json) => Student(
+        id: json['id']?.toString() ?? '',
+        name: json['name']?.toString() ?? '',
+        phone: json['phone']?.toString() ?? '',
+        parentPhone: json['parentPhone']?.toString() ?? '',
+        sessionsSincePayment: json['sessionsSincePayment'] as int? ?? 0,
+        pricePerCycle: (json['pricePerCycle'] as num?)?.toDouble() ?? 100.0,
+        pricePerMonth: (json['pricePerMonth'] as num?)?.toDouble() ?? 100.0,
+        pricePerSession: (json['pricePerSession'] as num?)?.toDouble() ?? 30.0,
+        monthlyExpiry: json['monthlyExpiry'] != null
+            ? DateTime.tryParse(json['monthlyExpiry'].toString())
+            : null,
+        attendances: (json['attendances'] as List?)
+                ?.map((d) => DateTime.tryParse(d.toString()))
+                .whereType<DateTime>()
+                .toList() ??
+            [],
+        payments: (json['payments'] as List?)
+                ?.map((p) => Payment.fromJson(Map<String, dynamic>.from(p as Map)))
+                .toList() ??
+            [],
+        groupId: json['groupId']?.toString() ?? '',
+        email: json['email']?.toString() ?? '',
+        originSchool: json['originSchool']?.toString() ?? '',
+        paymentMode: json['paymentMode']?.toString() ?? kPaymentModeCycle,
+        lastModifiedAt: json['lastModifiedAt'] != null
+            ? DateTime.tryParse(json['lastModifiedAt'].toString())
+            : null,
+        isLocalOnly: json['isLocalOnly'] as bool? ?? true,
+      );
 
   bool get isMonthlyActive {
     if (monthlyExpiry == null) return false;

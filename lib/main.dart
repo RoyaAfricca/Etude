@@ -62,19 +62,35 @@ void main() async {
     await Hive.initFlutter();
   }
 
-  // Register adapters
-  Hive.registerAdapter(StudentAdapter());
-  Hive.registerAdapter(GroupAdapter());
-  Hive.registerAdapter(PaymentAdapter());
-  Hive.registerAdapter(ScheduleSlotAdapter()); // Ajouté pour empêcher le plantage
+  // Register adapters safely
+  if (!Hive.isAdapterRegistered(0)) Hive.registerAdapter(StudentAdapter());
+  if (!Hive.isAdapterRegistered(1)) Hive.registerAdapter(GroupAdapter());
+  if (!Hive.isAdapterRegistered(2)) Hive.registerAdapter(PaymentAdapter());
+  if (!Hive.isAdapterRegistered(4)) Hive.registerAdapter(ScheduleSlotAdapter());
 
-  // Open boxes
-  await Hive.openBox<Student>('students');
-  await Hive.openBox<Group>('groups');
-  await Hive.openBox('settings');
+  // Open boxes safely
+  try {
+    await Hive.openBox<Student>('students');
+  } catch (e) {
+    debugPrint('Error opening students box: $e');
+  }
+  try {
+    await Hive.openBox<Group>('groups');
+  } catch (e) {
+    debugPrint('Error opening groups box: $e');
+  }
+  try {
+    await Hive.openBox('settings');
+  } catch (e) {
+    debugPrint('Error opening settings box: $e');
+  }
 
   // Initialize Sync Service (Offline-First)
-  SyncService().init();
+  try {
+    SyncService().init();
+  } catch (e) {
+    debugPrint('Error initializing SyncService: $e');
+  }
 
 
   // Set status bar style (mobile only)

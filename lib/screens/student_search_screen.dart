@@ -46,7 +46,8 @@ class _StudentSearchScreenState extends State<StudentSearchScreen> {
             final query = _searchQuery.toLowerCase().trim();
             if (query.isEmpty) return true;
             return student.name.toLowerCase().contains(query) ||
-                student.phone.contains(query);
+                student.phone.contains(query) ||
+                student.parentPhone.contains(query);
           }).toList();
 
           return Column(
@@ -208,7 +209,7 @@ class _StudentSearchScreenState extends State<StudentSearchScreen> {
                                       }).toList(),
                                     ),
                                   ],
-                                  if (student.phone.isNotEmpty || student.email.isNotEmpty) ...[
+                                  if (student.phone.isNotEmpty || student.parentPhone.isNotEmpty || student.email.isNotEmpty) ...[
                                     const SizedBox(height: 6),
                                     Row(
                                       children: [
@@ -217,6 +218,18 @@ class _StudentSearchScreenState extends State<StudentSearchScreen> {
                                           const SizedBox(width: 4),
                                           Text(
                                             student.phone,
+                                            style: const TextStyle(
+                                              color: AppTheme.textMuted,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                        ],
+                                        if (student.parentPhone.isNotEmpty) ...[
+                                          const Icon(Icons.contact_phone_outlined, size: 12, color: AppTheme.accent),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'Parent: ${student.parentPhone}',
                                             style: const TextStyle(
                                               color: AppTheme.textMuted,
                                               fontSize: 12,

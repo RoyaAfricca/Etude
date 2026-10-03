@@ -297,6 +297,10 @@ class PdfService {
               pw.SizedBox(height: 6),
               _infoRow(l.studentPhone,
                   student.phone.isNotEmpty ? student.phone : '—', rtl: rtl),
+              if (student.parentPhone.isNotEmpty) ...[
+                pw.SizedBox(height: 6),
+                _infoRow('Tél. Parent', student.parentPhone, rtl: rtl),
+              ],
               pw.SizedBox(height: 20),
               _sectionTitle(l.paymentDetails.toUpperCase()),
               _infoRow(l.month, _fmtMonth(payment.date, l), rtl: rtl),
@@ -396,6 +400,10 @@ class PdfService {
           pw.SizedBox(height: 6),
           _infoRow(l.studentPhone,
               student.phone.isNotEmpty ? student.phone : '—', rtl: rtl),
+          if (student.parentPhone.isNotEmpty) ...[
+            pw.SizedBox(height: 6),
+            _infoRow('Tél. Parent', student.parentPhone, rtl: rtl),
+          ],
           pw.SizedBox(height: 6),
           _infoRow(l.pricePerCycle, _fmtAmount(student.pricePerCycle, l), rtl: rtl),
           pw.SizedBox(height: 16),

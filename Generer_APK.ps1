@@ -20,17 +20,28 @@ Write-Host "`n[2/3] Compilation APK Universel (arm, arm64, x64 + Obfuscation)...
 Write-Host "`n[3/3] Copie de l'APK vers Adel, final, et website..." -ForegroundColor Yellow
 $OUT_DIR = "$PROJECT\build\app\outputs\flutter-apk\app-release.apk"
 
+$pubspec = Get-Content -Path "$PROJECT\pubspec.yaml" -Raw
+$versionMatch = [regex]::Match($pubspec, 'version:\s*([0-9a-zA-Z.+_-]+)')
+$version = if ($versionMatch.Success) { $versionMatch.Groups[1].Value.Split('+')[0] } else { "1.3.1" }
+
 if (Test-Path $OUT_DIR) {
     if (!(Test-Path "$PROJECT\Adel")) { New-Item -ItemType Directory -Path "$PROJECT\Adel" | Out-Null }
     Copy-Item -Path $OUT_DIR -Destination "$PROJECT\Adel\application_etude.apk" -Force
+    Copy-Item -Path $OUT_DIR -Destination "$PROJECT\Adel\application_etude_$version.apk" -Force
     
     if (!(Test-Path "$PROJECT\final")) { New-Item -ItemType Directory -Path "$PROJECT\final" | Out-Null }
-    Copy-Item -Path $OUT_DIR -Destination "$PROJECT\final\application_etude_1.2.1.apk" -Force
+    Copy-Item -Path $OUT_DIR -Destination "$PROJECT\final\application_etude_$version.apk" -Force
+    Copy-Item -Path $OUT_DIR -Destination "$PROJECT\final\application_etude.apk" -Force
     
-    Copy-Item -Path $OUT_DIR -Destination "$PROJECT\website\etude_app_arm64.apk" -Force
+    if (Test-Path "$PROJECT\website") {
+        Copy-Item -Path $OUT_DIR -Destination "$PROJECT\website\etude_app_arm64.apk" -Force
+    }
     
     Write-Host "`n========================================================" -ForegroundColor Green
-    Write-Host "  TERMINE AVEC SUCCES !" -ForegroundColor Green
+    Write-Host "  TERMINE AVEC SUCCES ! (Version $version)" -ForegroundColor Green
+    Write-Host "  - $PROJECT\final\application_etude_$version.apk" -ForegroundColor Green
+    Write-Host "  - $PROJECT\final\application_etude.apk" -ForegroundColor Green
+    Write-Host "  - $PROJECT\Adel\application_etude.apk" -ForegroundColor Green
     Write-Host "========================================================`n"
 } else {
     Write-Host "`n[!] ERREUR : L'APK n'a pas pu être généré. Vérifiez les erreurs ci-dessus." -ForegroundColor Red

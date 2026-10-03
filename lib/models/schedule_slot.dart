@@ -50,4 +50,20 @@ class ScheduleSlot extends HiveObject {
     ];
     return daysFr[dayOfWeek - 1];
   }
+
+  Map<String, dynamic> toJson() => {
+        'dayOfWeek': dayOfWeek,
+        'startHour': startHour,
+        'startMinute': startMinute,
+        'endHour': endHour,
+        'endMinute': endMinute,
+      };
+
+  factory ScheduleSlot.fromJson(Map<String, dynamic> json) => ScheduleSlot(
+        dayOfWeek: json['dayOfWeek'] as int? ?? 1,
+        startHour: json['startHour'] as int? ?? 0,
+        startMinute: json['startMinute'] as int? ?? 0,
+        endHour: json['endHour'] as int? ?? 0,
+        endMinute: json['endMinute'] as int? ?? 0,
+      );
 }

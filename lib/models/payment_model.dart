@@ -34,4 +34,28 @@ class Payment {
     this.lastModifiedAt,
     this.isLocalOnly = true,
   });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'date': date.toIso8601String(),
+        'amount': amount,
+        'sessionsCount': sessionsCount,
+        'paymentType': paymentType,
+        'lastModifiedAt': lastModifiedAt?.toIso8601String(),
+        'isLocalOnly': isLocalOnly,
+      };
+
+  factory Payment.fromJson(Map<String, dynamic> json) => Payment(
+        id: json['id']?.toString() ?? '',
+        date: json['date'] != null
+            ? DateTime.tryParse(json['date'].toString()) ?? DateTime.now()
+            : DateTime.now(),
+        amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
+        sessionsCount: json['sessionsCount'] as int? ?? 4,
+        paymentType: json['paymentType']?.toString() ?? 'sessions',
+        lastModifiedAt: json['lastModifiedAt'] != null
+            ? DateTime.tryParse(json['lastModifiedAt'].toString())
+            : null,
+        isLocalOnly: json['isLocalOnly'] as bool? ?? true,
+      );
 }

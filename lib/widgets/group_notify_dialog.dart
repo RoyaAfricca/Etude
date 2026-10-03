@@ -9,6 +9,7 @@ import '../theme/app_theme.dart';
 import '../utils/phone_validator.dart';
 
 enum NotificationMethod { sms, email, whatsapp }
+enum NotificationTarget { all, studentsOnly, parentsOnly }
 
 class GroupNotifyDialog extends StatefulWidget {
   final List<Student> students;
@@ -34,6 +35,7 @@ class GroupNotifyDialog extends StatefulWidget {
 class _GroupNotifyDialogState extends State<GroupNotifyDialog> {
   final _messageController = TextEditingController();
   NotificationMethod _selectedMethod = NotificationMethod.email;
+  NotificationTarget _selectedTarget = NotificationTarget.all;
   bool _isSending = false;
 
   final List<Map<String, String>> _templates = [
@@ -89,11 +91,14 @@ class _GroupNotifyDialogState extends State<GroupNotifyDialog> {
       case NotificationMethod.whatsapp:
         final allPhones = <String>[];
         for (final s in widget.students) {
-          if (s.phone.isNotEmpty) {
+          if (_selectedTarget != NotificationTarget.parentsOnly && s.phone.isNotEmpty) {
             allPhones.addAll(PhoneValidator.cleanAndSplit(s.phone));
           }
+          if (_selectedTarget != NotificationTarget.studentsOnly && s.parentPhone.isNotEmpty) {
+            allPhones.addAll(PhoneValidator.cleanAndSplit(s.parentPhone));
+          }
         }
-        return allPhones;
+        return allPhones.toSet().toList();
     }
   }
 
@@ -222,6 +227,40 @@ class _GroupNotifyDialogState extends State<GroupNotifyDialog> {
                   ],
                 ],
               ),
+              if (_selectedMethod != NotificationMethod.email) ...[
+                const SizedBox(height: 14),
+                Text(
+                  'Destinataires ciblés',
+                  style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textSecondary),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    ChoiceChip(
+                      label: const Text('Tous (Élèves & Parents)'),
+                      selected: _selectedTarget == NotificationTarget.all,
+                      onSelected: (val) {
+                        if (val) setState(() => _selectedTarget = NotificationTarget.all);
+                      },
+                    ),
+                    ChoiceChip(
+                      label: const Text('Élèves seuls'),
+                      selected: _selectedTarget == NotificationTarget.studentsOnly,
+                      onSelected: (val) {
+                        if (val) setState(() => _selectedTarget = NotificationTarget.studentsOnly);
+                      },
+                    ),
+                    ChoiceChip(
+                      label: const Text('Parents seuls'),
+                      selected: _selectedTarget == NotificationTarget.parentsOnly,
+                      onSelected: (val) {
+                        if (val) setState(() => _selectedTarget = NotificationTarget.parentsOnly);
+                      },
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 20),
               Text(
                 'Modèles rapides',

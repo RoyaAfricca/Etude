@@ -163,6 +163,24 @@ class StudentDetailScreen extends StatelessWidget {
                           ],
                         ),
                       ],
+                      if (student.parentPhone.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.contact_phone_outlined,
+                                size: 14, color: AppTheme.accent),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Parent: ${student.parentPhone}',
+                              style: const TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                       if (student.email.isNotEmpty) ...[
                         const SizedBox(height: 4),
                         Row(
@@ -426,6 +444,49 @@ class StudentDetailScreen extends StatelessWidget {
                     },
                   ),
                 ),
+                if (student.parentPhone.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.contact_phone_rounded, size: 20),
+                      label: const Text(
+                        'Informer le parent (SMS/Message)',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primary.withOpacity(0.15),
+                        foregroundColor: AppTheme.primary,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                          side: const BorderSide(color: AppTheme.primary, width: 1.5),
+                        ),
+                      ),
+                      onPressed: () {
+                        PhoneValidator.showPhoneSelector(
+                          context,
+                          phoneString: student.parentPhone,
+                          title: 'Informer le parent',
+                          onSelected: (phone) {
+                            final s = Student(
+                              id: student.id,
+                              name: '${student.name} (Parent)',
+                              phone: phone,
+                              parentPhone: phone,
+                              groupId: student.groupId,
+                              pricePerCycle: student.pricePerCycle,
+                              email: student.email,
+                              originSchool: student.originSchool,
+                            );
+                            GroupNotifyDialog.show(context, [s], '${student.name} (Parent)');
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 // Boutons d'impression PDF
                 Column(
@@ -1286,6 +1347,7 @@ class StudentDetailScreen extends StatelessWidget {
   void _showEditStudentDialog(BuildContext context, AppProvider provider, Student student) {
     final nameCtl = TextEditingController(text: student.name);
     final phoneCtl = TextEditingController(text: student.phone);
+    final parentPhoneCtl = TextEditingController(text: student.parentPhone);
     final emailCtl = TextEditingController(text: student.email);
 
     showModalBottomSheet(
@@ -1341,8 +1403,18 @@ class StudentDetailScreen extends StatelessWidget {
                   keyboardType: TextInputType.phone,
                   style: const TextStyle(color: AppTheme.textPrimary),
                   decoration: const InputDecoration(
-                    labelText: 'Téléphone (ex: 20123456, 55123456)',
+                    labelText: 'Téléphone élève (ex: 20123456)',
                     prefixIcon: Icon(Icons.phone_outlined, color: AppTheme.primary),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: parentPhoneCtl,
+                  keyboardType: TextInputType.phone,
+                  style: const TextStyle(color: AppTheme.textPrimary),
+                  decoration: const InputDecoration(
+                    labelText: 'Numéro Parent (optionnel)',
+                    prefixIcon: Icon(Icons.contact_phone_outlined, color: AppTheme.primary),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -1364,11 +1436,20 @@ class StudentDetailScreen extends StatelessWidget {
                       final name = nameCtl.text.trim();
                       final phone = phoneCtl.text.trim();
                       final phonesList = PhoneValidator.cleanAndSplit(phone);
+                      final parentPhone = parentPhoneCtl.text.trim();
+                      final parentPhonesList = PhoneValidator.cleanAndSplit(parentPhone);
                       
                       if (name.isEmpty) return;
                       if (phone.isNotEmpty && !PhoneValidator.isValidTunisianList(phonesList)) {
                         ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(content: Text('Chaque numéro doit faire 8 chiffres (Tunisie)')),
+                          const SnackBar(content: Text('Chaque numéro de l\'élève doit faire 8 chiffres (Tunisie)')),
+                        );
+                        return;
+                      }
+
+                      if (parentPhone.isNotEmpty && !PhoneValidator.isValidTunisianList(parentPhonesList)) {
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          const SnackBar(content: Text('Le numéro du parent doit faire 8 chiffres (Tunisie)')),
                         );
                         return;
                       }
@@ -1378,6 +1459,7 @@ class StudentDetailScreen extends StatelessWidget {
                         name,
                         phone,
                         emailCtl.text.trim(),
+                        parentPhone: parentPhone,
                       );
                       Navigator.pop(ctx);
                     },

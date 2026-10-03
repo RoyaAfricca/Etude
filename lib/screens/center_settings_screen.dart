@@ -679,18 +679,19 @@ class _CenterSettingsScreenState extends State<CenterSettingsScreen>
           const Divider(height: 24, color: AppTheme.cardBorder),
           const SizedBox(height: 8),
           
-          // Download Template Button
+          // Export to Excel Button
           _buildMaintenanceButton(
-            icon: Icons.download_rounded,
-            label: 'Télécharger le modèle Excel',
-            description: 'Obtenir un fichier vierge avec les bons en-têtes',
-            color: AppTheme.accent,
+            icon: Icons.table_view_rounded,
+            label: 'Exporter toutes les données (Excel)',
+            description: 'Exporter élèves, groupes, profs et paiements en fichier .xlsx',
+            color: AppTheme.success,
             onTap: () async {
-              final ok = await ImportService.generateTemplate();
-              if (ok && mounted) {
+              final provider = context.read<AppProvider>();
+              final path = await ImportService.exportToExcel(provider);
+              if (path != null && mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Modèle Excel enregistré !'),
+                  SnackBar(
+                    content: Text('✅ Données exportées avec succès !'),
                     backgroundColor: AppTheme.success,
                     behavior: SnackBarBehavior.floating,
                   ),
@@ -699,12 +700,12 @@ class _CenterSettingsScreenState extends State<CenterSettingsScreen>
             },
           ),
           const SizedBox(height: 12),
-          
-          // Import Button
+
+          // Import from Excel Button
           _buildMaintenanceButton(
             icon: Icons.upload_file_rounded,
             label: 'Importer depuis Excel',
-            description: 'Ajouter élèves, profs et groupes en masse',
+            description: 'Ajouter élèves, profs et groupes en masse (.xlsx)',
             color: AppTheme.primary,
             onTap: () async {
               final provider = context.read<AppProvider>();
@@ -745,6 +746,109 @@ class _CenterSettingsScreenState extends State<CenterSettingsScreen>
           ),
           const SizedBox(height: 12),
 
+          // Download Template Button
+          _buildMaintenanceButton(
+            icon: Icons.download_rounded,
+            label: 'Télécharger le modèle Excel',
+            description: 'Obtenir un fichier vierge avec les bons en-têtes (avec N° Parent)',
+            color: AppTheme.accent,
+            onTap: () async {
+              final ok = await ImportService.generateTemplate();
+              if (ok && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Modèle Excel enregistré !'),
+                    backgroundColor: AppTheme.success,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
+          ),
+          const SizedBox(height: 20),
+
+          Row(
+            children: [
+              const Icon(Icons.backup_rounded,
+                  color: AppTheme.textSecondary, size: 18),
+              const SizedBox(width: 8),
+              Text('Sauvegarde & Restauration Intégrale',
+                  style: GoogleFonts.outfit(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textPrimary)),
+            ],
+          ),
+          const Divider(height: 24, color: AppTheme.cardBorder),
+          const SizedBox(height: 8),
+
+          // Export Backup JSON Button
+          _buildMaintenanceButton(
+            icon: Icons.save_rounded,
+            label: 'Créer une sauvegarde complète (JSON)',
+            description: 'Exporter une copie intégrale de toutes les données du centre',
+            color: AppTheme.primary,
+            onTap: () async {
+              final provider = context.read<AppProvider>();
+              final path = await ImportService.exportBackupJson(provider);
+              if (path != null && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('✅ Sauvegarde complète enregistrée avec succès !'),
+                    backgroundColor: AppTheme.success,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
+          ),
+          const SizedBox(height: 12),
+
+          // Restore Backup JSON Button
+          _buildMaintenanceButton(
+            icon: Icons.settings_backup_restore_rounded,
+            label: 'Restaurer une sauvegarde (JSON)',
+            description: 'Restaurer la base de données depuis un fichier précédent',
+            color: AppTheme.orange,
+            onTap: () async {
+              final provider = context.read<AppProvider>();
+              try {
+                final stats = await ImportService.importBackupJson(context, provider);
+                if (stats != null && mounted) {
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      backgroundColor: AppTheme.surface,
+                      title: const Text('Restauration terminée',
+                          style: TextStyle(color: AppTheme.textPrimary)),
+                      content: Text(
+                        'Données restaurées avec succès :\n'
+                        '• ${stats['students']} élèves\n'
+                        '• ${stats['groups']} groupes',
+                        style: const TextStyle(color: AppTheme.textSecondary),
+                      ),
+                      actions: [
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text('OK'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Erreur de restauration : $e'),
+                      backgroundColor: AppTheme.danger,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              }
+            },
+          ),
           const SizedBox(height: 40),
         ],
       ),

@@ -132,6 +132,10 @@ class PdfReceiptService {
                 ...[pw.SizedBox(height: 6), _infoRow('Salle', group.roomName!)],
               pw.SizedBox(height: 6),
               _infoRow('Téléphone', student.phone.isNotEmpty ? student.phone : '—'),
+              if (student.parentPhone.isNotEmpty) ...[
+                pw.SizedBox(height: 6),
+                _infoRow('Tél. Parent', student.parentPhone),
+              ],
               pw.SizedBox(height: 20),
 
               // ── Détails du Paiement ─────────────────────────────────
