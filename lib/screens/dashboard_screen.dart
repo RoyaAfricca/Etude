@@ -16,6 +16,7 @@ import 'teacher_reports_screen.dart';
 import '../l10n/app_localizations.dart';
 import 'room_occupation_screen.dart';
 import 'student_search_screen.dart';
+import '../widgets/data_management_dialog.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -146,6 +147,19 @@ class DashboardScreen extends StatelessWidget {
                       },
                     ),
                   ),
+                  // Données & Sauvegardes button
+                  Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.success.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.cloud_sync_rounded, color: AppTheme.success),
+                      tooltip: 'Données & Sauvegardes (Export / Import)',
+                      onPressed: () => DataManagementDialog.show(context),
+                    ),
+                  ),
                   // Mode Vacances Toggle
                   _buildHolidayToggle(context, provider),
                   // Reset button
@@ -196,6 +210,59 @@ class DashboardScreen extends StatelessWidget {
                       showRevenue: provider.showRevenue,
                       onToggleRevenue: provider.toggleRevenue,
                     ),
+                    const SizedBox(height: 16),
+
+                    // ── Recherche rapide d'élèves ──
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const StudentSearchScreen(),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: AppTheme.surface,
+                          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                          border: Border.all(color: AppTheme.cardBorder),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.search_rounded,
+                                color: AppTheme.primary, size: 22),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Text(
+                                'Rechercher un élève par nom ou numéro...',
+                                style: TextStyle(
+                                  color: AppTheme.textSecondary,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primary.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text(
+                                'Chercher',
+                                style: TextStyle(
+                                  color: AppTheme.primary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 20),
 
                     // ── Quick Stats ──
@@ -245,6 +312,16 @@ class DashboardScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 24),
                     ],
+
+                    // ── Données & Sauvegardes ──
+                    _ActionCard(
+                      title: 'Données & Sauvegardes (Export / Import)',
+                      subtitle: 'Exporter/Importer Excel (.xlsx), Sauvegarde intégrale JSON',
+                      icon: Icons.sync_alt_rounded,
+                      color: AppTheme.success,
+                      onTap: () => DataManagementDialog.show(context),
+                    ),
+                    const SizedBox(height: 24),
 
                     // ── Groups Overview ──
                     Row(

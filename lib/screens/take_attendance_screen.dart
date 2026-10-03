@@ -213,14 +213,39 @@ class _TakeAttendanceScreenState extends State<TakeAttendanceScreen> {
                                   : FontWeight.normal,
                             ),
                           ),
-                          subtitle: Text(
-                            isPresent ? 'Présent(e)' : 'Absent(e)',
-                            style: TextStyle(
-                              color: isPresent
-                                  ? AppTheme.success
-                                  : AppTheme.textSecondary,
-                              fontSize: 12,
-                            ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isPresent ? 'Présent(e)' : 'Absent(e)',
+                                style: TextStyle(
+                                  color: isPresent
+                                      ? AppTheme.success
+                                      : AppTheme.danger,
+                                  fontSize: 12,
+                                  fontWeight: isPresent ? FontWeight.normal : FontWeight.w600,
+                                ),
+                              ),
+                              if (student.parentPhone.isNotEmpty) ...[
+                                const SizedBox(height: 2),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.contact_phone_outlined,
+                                        size: 11, color: AppTheme.accent),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      'Parent: ${student.parentPhone}',
+                                      style: const TextStyle(
+                                        color: AppTheme.accent,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
                           ),
                           onChanged: (val) {
                             setState(() {

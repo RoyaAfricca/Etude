@@ -5,6 +5,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../models/student_model.dart';
 import '../models/group_model.dart';
 import '../services/center_service.dart';
@@ -44,22 +46,35 @@ class ImportService {
         TextCellValue('Séances déjà payées (0-4)'),
       ]);
 
-      String? outputFile = await FilePicker.platform.saveFile(
-        dialogTitle: 'Enregistrer le modèle Excel',
-        fileName: 'modele_import_etude.xlsx',
-        type: FileType.custom,
-        allowedExtensions: ['xlsx'],
-      );
-
-      if (outputFile != null) {
-        if (!outputFile.toLowerCase().endsWith('.xlsx')) {
-          outputFile = '$outputFile.xlsx';
+      String? outputFile;
+      try {
+        if (!Platform.isAndroid && !Platform.isIOS) {
+          outputFile = await FilePicker.platform.saveFile(
+            dialogTitle: 'Enregistrer le modèle Excel',
+            fileName: 'modele_import_etude.xlsx',
+            type: FileType.custom,
+            allowedExtensions: ['xlsx'],
+          );
         }
-        var bytes = excel.save();
-        if (bytes != null) {
+      } catch (e) {
+        debugPrint('FilePicker saveFile error: $e');
+      }
+
+      var bytes = excel.save();
+      if (bytes != null) {
+        if (outputFile != null) {
+          if (!outputFile.toLowerCase().endsWith('.xlsx')) {
+            outputFile = '$outputFile.xlsx';
+          }
           File(outputFile)
             ..createSync(recursive: true)
             ..writeAsBytesSync(bytes);
+          return true;
+        } else {
+          final dir = await getApplicationDocumentsDirectory();
+          final file = File('${dir.path}/modele_import_etude.xlsx');
+          await file.writeAsBytes(bytes);
+          await Share.shareXFiles([XFile(file.path)], text: 'Modèle Import Étude Excel');
           return true;
         }
       }
@@ -236,23 +251,36 @@ class ImportService {
       }
 
       final dateStr = DateFormat('yyyy-MM-dd_HHmm').format(DateTime.now());
-      String? outputFile = await FilePicker.platform.saveFile(
-        dialogTitle: 'Exporter les données vers Excel',
-        fileName: 'donnees_etude_$dateStr.xlsx',
-        type: FileType.custom,
-        allowedExtensions: ['xlsx'],
-      );
-
-      if (outputFile != null) {
-        if (!outputFile.toLowerCase().endsWith('.xlsx')) {
-          outputFile = '$outputFile.xlsx';
+      String? outputFile;
+      try {
+        if (!Platform.isAndroid && !Platform.isIOS) {
+          outputFile = await FilePicker.platform.saveFile(
+            dialogTitle: 'Exporter les données vers Excel',
+            fileName: 'donnees_etude_$dateStr.xlsx',
+            type: FileType.custom,
+            allowedExtensions: ['xlsx'],
+          );
         }
-        var bytes = excel.save();
-        if (bytes != null) {
+      } catch (e) {
+        debugPrint('FilePicker saveFile error: $e');
+      }
+
+      var bytes = excel.save();
+      if (bytes != null) {
+        if (outputFile != null) {
+          if (!outputFile.toLowerCase().endsWith('.xlsx')) {
+            outputFile = '$outputFile.xlsx';
+          }
           File(outputFile)
             ..createSync(recursive: true)
             ..writeAsBytesSync(bytes);
           return outputFile;
+        } else {
+          final dir = await getApplicationDocumentsDirectory();
+          final file = File('${dir.path}/donnees_etude_$dateStr.xlsx');
+          await file.writeAsBytes(bytes);
+          await Share.shareXFiles([XFile(file.path)], text: 'Export Données Étude Excel');
+          return file.path;
         }
       }
       return null;
@@ -482,12 +510,19 @@ class ImportService {
       final jsonString = const JsonEncoder.withIndent('  ').convert(backupData);
       final dateStr = DateFormat('yyyy-MM-dd_HHmm').format(DateTime.now());
 
-      String? outputFile = await FilePicker.platform.saveFile(
-        dialogTitle: 'Enregistrer la sauvegarde intégrale',
-        fileName: 'sauvegarde_etude_$dateStr.json',
-        type: FileType.custom,
-        allowedExtensions: ['json'],
-      );
+      String? outputFile;
+      try {
+        if (!Platform.isAndroid && !Platform.isIOS) {
+          outputFile = await FilePicker.platform.saveFile(
+            dialogTitle: 'Enregistrer la sauvegarde intégrale',
+            fileName: 'sauvegarde_etude_$dateStr.json',
+            type: FileType.custom,
+            allowedExtensions: ['json'],
+          );
+        }
+      } catch (e) {
+        debugPrint('FilePicker saveFile error: $e');
+      }
 
       if (outputFile != null) {
         if (!outputFile.toLowerCase().endsWith('.json')) {
@@ -497,8 +532,13 @@ class ImportService {
           ..createSync(recursive: true)
           ..writeAsStringSync(jsonString, encoding: utf8);
         return outputFile;
+      } else {
+        final dir = await getApplicationDocumentsDirectory();
+        final file = File('${dir.path}/sauvegarde_etude_$dateStr.json');
+        await file.writeAsString(jsonString, encoding: utf8);
+        await Share.shareXFiles([XFile(file.path)], text: 'Sauvegarde Intégrale Étude');
+        return file.path;
       }
-      return null;
     } catch (e) {
       debugPrint('Error exporting backup JSON: $e');
       return null;

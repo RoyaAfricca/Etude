@@ -45,9 +45,13 @@ class _StudentSearchScreenState extends State<StudentSearchScreen> {
           final filteredStudents = provider.students.where((student) {
             final query = _searchQuery.toLowerCase().trim();
             if (query.isEmpty) return true;
+            final cleanQuery = query.replaceAll(RegExp(r'[\s\-\.]'), '');
+            final cleanPhone = student.phone.replaceAll(RegExp(r'[\s\-\.]'), '');
+            final cleanParentPhone = student.parentPhone.replaceAll(RegExp(r'[\s\-\.]'), '');
+
             return student.name.toLowerCase().contains(query) ||
-                student.phone.contains(query) ||
-                student.parentPhone.contains(query);
+                (cleanQuery.isNotEmpty && cleanPhone.contains(cleanQuery)) ||
+                (cleanQuery.isNotEmpty && cleanParentPhone.contains(cleanQuery));
           }).toList();
 
           return Column(
@@ -59,7 +63,7 @@ class _StudentSearchScreenState extends State<StudentSearchScreen> {
                   controller: _searchCtl,
                   style: const TextStyle(color: AppTheme.textPrimary),
                   decoration: InputDecoration(
-                    hintText: 'Rechercher par nom ou numéro...',
+                    hintText: 'Rechercher par nom d\'élève ou numéro parent...',
                     prefixIcon: const Icon(Icons.search, color: AppTheme.textSecondary),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
@@ -231,7 +235,8 @@ class _StudentSearchScreenState extends State<StudentSearchScreen> {
                                           Text(
                                             'Parent: ${student.parentPhone}',
                                             style: const TextStyle(
-                                              color: AppTheme.textMuted,
+                                              color: AppTheme.accent,
+                                              fontWeight: FontWeight.w600,
                                               fontSize: 12,
                                             ),
                                           ),

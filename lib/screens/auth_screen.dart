@@ -8,6 +8,8 @@ import '../services/activation_service.dart';
 import 'activation_screen.dart';
 import 'dashboard_screen.dart';
 
+import 'login_screen.dart';
+
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
 
@@ -52,6 +54,17 @@ class _AuthScreenState extends State<AuthScreen> {
 
     bool authenticated = false;
     try {
+      final canCheck = await auth.canCheckBiometrics;
+      final isSupported = await auth.isDeviceSupported();
+      if (!canCheck && !isSupported) {
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+        return;
+      }
+
       setState(() {
         _isAuthenticating = true;
         _authMessage = 'Vérification en cours...';
@@ -59,12 +72,14 @@ class _AuthScreenState extends State<AuthScreen> {
       authenticated = await auth.authenticate(
         localizedReason: 'Déverrouillez pour accéder à Étude',
       );
-    } on PlatformException catch (e) {
-      debugPrint('Auth error: ${e.message}');
-      setState(() {
-        _isAuthenticating = false;
-        _authMessage = 'Erreur d\'authentification';
-      });
+    } catch (e) {
+      debugPrint('Auth error: $e');
+      if (mounted) {
+        setState(() {
+          _isAuthenticating = false;
+          _authMessage = 'Empreinte non disponible ou annulée';
+        });
+      }
       return;
     }
 
@@ -78,7 +93,7 @@ class _AuthScreenState extends State<AuthScreen> {
     } else {
       setState(() {
         _isAuthenticating = false;
-        _authMessage = 'Accès refusé. Veuillez réessayer.';
+        _authMessage = 'Accès refusé. Veuillez réessayer ou entrer le mot de passe.';
       });
     }
   }
@@ -157,6 +172,22 @@ class _AuthScreenState extends State<AuthScreen> {
                     ),
                   ),
                 ),
+              if (!_isAuthenticating) ...[
+                const SizedBox(height: 16),
+                TextButton.icon(
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.password_rounded, color: AppTheme.accent),
+                  label: const Text(
+                    'Se connecter avec mot de passe',
+                    style: TextStyle(color: AppTheme.accent, fontSize: 14),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

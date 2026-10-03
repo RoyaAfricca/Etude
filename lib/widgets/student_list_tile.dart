@@ -71,6 +71,48 @@ class StudentListTile extends StatelessWidget {
                           ),
                         ],
                       ),
+                      if (student.phone.isNotEmpty || student.parentPhone.isNotEmpty) ...[
+                        const SizedBox(height: 3),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 2,
+                          children: [
+                            if (student.phone.isNotEmpty)
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.phone_outlined,
+                                      size: 11, color: AppTheme.textMuted),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    student.phone,
+                                    style: const TextStyle(
+                                      color: AppTheme.textMuted,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            if (student.parentPhone.isNotEmpty)
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.contact_phone_outlined,
+                                      size: 11, color: AppTheme.accent),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    'Parent: ${student.parentPhone}',
+                                    style: const TextStyle(
+                                      color: AppTheme.accent,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),

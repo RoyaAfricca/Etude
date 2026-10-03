@@ -22,12 +22,73 @@ import 'screens/activation_screen.dart';
 import 'services/activation_service.dart';
 import 'services/center_service.dart';
 import 'services/sync_service.dart';
+import 'screens/dashboard_screen.dart';
 import 'theme/app_theme.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Remplace l'écran gris par un écran d'information avec bouton de secours
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    debugPrint('FlutterError: ${details.exception}');
+  };
+
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    return Material(
+      color: const Color(0xFF0F1123),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Center(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.info_outline_rounded, color: Colors.amberAccent, size: 48),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Étude — Chargement',
+                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.black45,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      details.exceptionAsString(),
+                      style: const TextStyle(color: Colors.white70, fontSize: 13),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.home_rounded, color: Colors.white),
+                    label: const Text('Aller au tableau de bord', style: TextStyle(color: Colors.white)),
+                    onPressed: () {
+                      navigatorKey.currentState?.pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+                        (route) => false,
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF6C63FF),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  };
   
   // 1. Initialize local services (Critical for UI and Data)
   await initializeDateFormatting('fr_FR', null);
@@ -68,24 +129,52 @@ void main() async {
   if (!Hive.isAdapterRegistered(2)) Hive.registerAdapter(PaymentAdapter());
   if (!Hive.isAdapterRegistered(4)) Hive.registerAdapter(ScheduleSlotAdapter());
 
-  // Open boxes safely
-  try {
-    await Hive.openBox<Student>('students');
-  } catch (e) {
-    debugPrint('Error opening students box: $e');
+  // Open boxes safely — vérifie d'abord si déjà ouvertes (hot restart)
+  if (!Hive.isBoxOpen('students')) {
+    try {
+      await Hive.openBox<Student>('students');
+    } catch (e) {
+      debugPrint('Error opening students box: $e');
+      // Tenter de supprimer et recréer la box corrompue
+      try {
+        await Hive.deleteBoxFromDisk('students');
+        await Hive.openBox<Student>('students');
+        debugPrint('Students box recreated after corruption');
+      } catch (e2) {
+        debugPrint('Failed to recreate students box: $e2');
+      }
+    }
   }
-  try {
-    await Hive.openBox<Group>('groups');
-  } catch (e) {
-    debugPrint('Error opening groups box: $e');
+  if (!Hive.isBoxOpen('groups')) {
+    try {
+      await Hive.openBox<Group>('groups');
+    } catch (e) {
+      debugPrint('Error opening groups box: $e');
+      try {
+        await Hive.deleteBoxFromDisk('groups');
+        await Hive.openBox<Group>('groups');
+        debugPrint('Groups box recreated after corruption');
+      } catch (e2) {
+        debugPrint('Failed to recreate groups box: $e2');
+      }
+    }
   }
-  try {
-    await Hive.openBox('settings');
-  } catch (e) {
-    debugPrint('Error opening settings box: $e');
+  if (!Hive.isBoxOpen('settings')) {
+    try {
+      await Hive.openBox('settings');
+    } catch (e) {
+      debugPrint('Error opening settings box: $e');
+      try {
+        await Hive.deleteBoxFromDisk('settings');
+        await Hive.openBox('settings');
+        debugPrint('Settings box recreated after corruption');
+      } catch (e2) {
+        debugPrint('Failed to recreate settings box: $e2');
+      }
+    }
   }
 
-  // Initialize Sync Service (Offline-First)
+  // Initialize Sync Service (Offline-First) — ne bloque pas le démarrage
   try {
     SyncService().init();
   } catch (e) {

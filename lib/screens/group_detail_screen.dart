@@ -17,6 +17,7 @@ import '../widgets/group_edit_dialog.dart';
 import '../widgets/group_notify_dialog.dart';
 import '../l10n/app_localizations.dart';
 import '../utils/phone_validator.dart';
+import '../widgets/data_management_dialog.dart';
 
 
 class GroupDetailScreen extends StatefulWidget {
@@ -30,18 +31,52 @@ class GroupDetailScreen extends StatefulWidget {
 
 class _GroupDetailScreenState extends State<GroupDetailScreen> {
   StudentStatus? _filterStatus;
+  final TextEditingController _searchCtl = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchCtl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<AppProvider>(
       builder: (context, provider, _) {
-        final group = provider.groups.firstWhere(
+        // Safe lookup — ne plante pas si la liste est vide
+        final groupOrNull = provider.groups.cast<dynamic>().firstWhere(
           (g) => g.id == widget.groupId,
-          orElse: () => provider.groups.first,
+          orElse: () => null,
         );
+        if (groupOrNull == null) {
+          return Scaffold(
+            backgroundColor: AppTheme.background,
+            appBar: AppBar(
+              title: const Text('Groupe'),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+            body: const Center(
+              child: Text('Groupe introuvable.',
+                  style: TextStyle(color: AppTheme.textSecondary)),
+            ),
+          );
+        }
+        final group = groupOrNull;
         final stats = provider.getGroupStats(group);
-        final students = provider.getStudentsForGroupFiltered(
+        final allGroupStudents = provider.getStudentsForGroupFiltered(
             widget.groupId, _filterStatus);
+        final students = _searchQuery.trim().isEmpty
+            ? allGroupStudents
+            : allGroupStudents.where((s) {
+                final q = _searchQuery.toLowerCase().trim();
+                return s.name.toLowerCase().contains(q) ||
+                    s.phone.contains(q) ||
+                    s.parentPhone.contains(q);
+              }).toList();
 
         return Scaffold(
           appBar: AppBar(
@@ -51,6 +86,20 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
               onPressed: () => Navigator.pop(context),
             ),
             actions: [
+              // Export / Import data button
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                decoration: BoxDecoration(
+                  color: AppTheme.success.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.import_export_rounded,
+                      color: AppTheme.success, size: 22),
+                  tooltip: 'Données & Sauvegardes',
+                  onPressed: () => DataManagementDialog.show(context),
+                ),
+              ),
               // Mark all attendance
               Container(
                 margin: const EdgeInsets.only(right: 8),
@@ -382,6 +431,44 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Search field
+                    TextField(
+                      controller: _searchCtl,
+                      style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: 'Rechercher un élève par nom ou numéro...',
+                        hintStyle: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                        prefixIcon: const Icon(Icons.search_rounded, size: 20, color: AppTheme.textSecondary),
+                        suffixIcon: _searchQuery.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, size: 18, color: AppTheme.textSecondary),
+                                onPressed: () {
+                                  _searchCtl.clear();
+                                  setState(() => _searchQuery = '');
+                                },
+                              )
+                            : null,
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        filled: true,
+                        fillColor: AppTheme.surface,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppTheme.cardBorder),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppTheme.cardBorder),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
+                        ),
+                      ),
+                      onChanged: (val) => setState(() => _searchQuery = val),
                     ),
                     const SizedBox(height: 12),
 

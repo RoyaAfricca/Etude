@@ -63,17 +63,27 @@ class AppProvider extends ChangeNotifier {
 
   // ── Load Data ──
   void loadData() {
-    final groupBox = Hive.box<Group>('groups');
-    final studentBox = Hive.box<Student>('students');
-    _groups = groupBox.values.toList();
-    _students = studentBox.values.toList();
+    try {
+      if (!Hive.isBoxOpen('groups') || !Hive.isBoxOpen('students') || !Hive.isBoxOpen('settings')) {
+        debugPrint('loadData: une ou plusieurs boxes Hive non ouvertes, retry dans 500ms');
+        Future.delayed(const Duration(milliseconds: 500), loadData);
+        return;
+      }
+      final groupBox = Hive.box<Group>('groups');
+      final studentBox = Hive.box<Student>('students');
+      _groups = groupBox.values.toList();
+      _students = studentBox.values.toList();
 
-    _isCenterMode = _configService.isCenterMode;
-    _language = _langService.language;
-    _isHolidayMode = Hive.box('settings')
-        .get('is_holiday_mode', defaultValue: false) as bool;
+      _isCenterMode = _configService.isCenterMode;
+      _language = _langService.language;
+      _isHolidayMode = Hive.box('settings')
+          .get('is_holiday_mode', defaultValue: false) as bool;
 
-    notifyListeners();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('loadData error: $e — retry in 500ms');
+      Future.delayed(const Duration(milliseconds: 500), loadData);
+    }
   }
 
   void refreshData() {

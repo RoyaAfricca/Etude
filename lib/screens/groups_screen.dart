@@ -11,6 +11,8 @@ import '../widgets/group_edit_dialog.dart';
 import '../widgets/group_notify_dialog.dart';
 import '../widgets/slot_add_dialog.dart';
 import '../widgets/multi_group_notify_dialog.dart';
+import '../widgets/data_management_dialog.dart';
+import 'student_search_screen.dart';
 
 class GroupsScreen extends StatelessWidget {
   const GroupsScreen({super.key});
@@ -27,6 +29,23 @@ class GroupsScreen extends StatelessWidget {
               onPressed: () => Navigator.pop(context),
             ),
             actions: [
+              IconButton(
+                icon: const Icon(Icons.search_rounded, color: AppTheme.primary),
+                tooltip: 'Rechercher un élève',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const StudentSearchScreen(),
+                    ),
+                  );
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.import_export_rounded, color: AppTheme.success),
+                tooltip: 'Données & Sauvegardes',
+                onPressed: () => DataManagementDialog.show(context),
+              ),
               if (provider.groups.isNotEmpty)
                 IconButton(
                   icon: const Icon(Icons.broadcast_on_personal_rounded, color: AppTheme.orange),
