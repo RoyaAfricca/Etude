@@ -735,3 +735,45 @@ footer {
     box-shadow: 0 0 10px #10b981;
     animation: blink 1.5s infinite;
 }
+
+/* ── Changelog Custom Styles ── */
+.changelog-body {
+    background: rgba(255, 255, 255, 0.01) !important;
+    border-radius: 16px;
+    padding: 8px 16px;
+    margin-top: 10px;
+}
+.changelog-title {
+    position: relative;
+    padding-left: 12px;
+}
+.changelog-title::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 15%;
+    bottom: 15%;
+    width: 3px;
+    background: var(--primary);
+    border-radius: 4px;
+}
+.changelog-list {
+    padding-left: 16px;
+}
+.changelog-list li {
+    font-size: 14px;
+    line-height: 1.7;
+    margin-bottom: 8px;
+    color: var(--text-muted) !important;
+    transition: color 0.2s ease;
+}
+.changelog-list li:hover {
+    color: var(--text-main) !important;
+}
+strong {
+    color: var(--text-main);
+}
+em {
+    color: var(--primary);
+    font-style: normal;
+}
